@@ -2127,6 +2127,12 @@ type
     hpeReserved = FLAG_RESERVED
   );
 
+const
+  // Special identifiers for columns.
+  NoColumn = -1;
+  InvalidColumn = -2;
+
+type  
   TBalloonHintIcon = (bitNone    = BIT_NONE,
                       bitInfo    = BIT_INFO,
                       bitWarning = BIT_WARNING,
