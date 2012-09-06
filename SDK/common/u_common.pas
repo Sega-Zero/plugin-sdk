@@ -95,7 +95,7 @@ type
 
     Group          : integer; //GroupFont
     Counter        : integer; //Counter (group and contact)
-    Online         : integer; //online contact/group
+    Online         : integer; //online ContactFont/GroupFont
     Offline        : integer;
     NotInList      : integer;
     OffMsg         : integer;
@@ -185,14 +185,6 @@ type
     MarkFontColor          : Integer;
 
     //sdk 1.12 :
-
-    //ContactFont == Online
-    //ContactGradientTop    not implemented
-    //ContactGradientBottom not implemented
-    //ContactFrameTop       not implemented
-    //ContactFrameBottom    not implemented
-
-    //GroupFont == Group
     GroupGradientTop: Integer;
     GroupGradientBottom: Integer;
     GroupFrameTop: Integer;
@@ -205,7 +197,7 @@ type
     HintFrameBottom: Integer;
 
     //controls
-    ControlBorderBottom: Integer; //линия в 1пкс разделяющая контролы (КЛ в основном)
+    ControlBorderBottom: Integer;
 
     //menu header
     HeaderTop    : Integer; 
