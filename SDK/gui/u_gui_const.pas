@@ -2701,7 +2701,6 @@ type
 
   ////////////////////////////////////////
   //dialogs
-  
   TOFNOption = (
     ofnReadonly, ofnOverwritePrompt, ofnHideReadonly,
     ofnNoChangeDir, ofnShowHelp, ofnNoValidate, ofnAllowMultiselect,
@@ -2729,18 +2728,9 @@ type
   TDialogStyle = (dsImage, dsButtons, dsHelp, dsHeader, dsInfo, dsInput, dsInput2, dsInput3, dsCombo, dsReserved = FLAG_RESERVED);
   TDialogStyles = set of TDialogStyle;
 
-  TDialogBtnStyle = (bsYes, bsOk, bsNo, bsCancel, bsCheck, bsReserved = FLAG_RESERVED);
+  TDialogBtnStyle = (bsYes, bsOk, bsNo, bsCancel, bsCheck, bsDefaultYesOk, bsDefaultNo, bsDefaultCancel, bsReserved = FLAG_RESERVED);
   TDialogBtnStyles = set of TDialogBtnStyle;
   ////////////////////////////////////////
-
-  TUpdateState = (
-    usCreate,
-    usDestroy,
-    usUpdate,
-    usGraphic,  //skin changed
-    usLang,     //lang changed
-    //usListener,
-    usReserved = FLAG_RESERVED);
 
 implementation
 

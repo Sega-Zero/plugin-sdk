@@ -3,7 +3,7 @@ unit u_public_intf;
 interface
 
 uses
-  Windows, Types, SysUtils, u_string, u_estack;
+  Windows, Types, u_string, u_estack, u_gui_intf, u_gui_const;
 
 const
   PRX_TYPE_NONE     = 0;
@@ -230,6 +230,8 @@ type
     function CreateIString(): IString; safecall;
     function CreateIStringList(): IStringList; safecall;
     function StringsGen(): pIStringsGen; safecall;
+
+    function CreateDialogs(): IDialogs; safecall;
   end;
   pIQIPUtils = ^IQIPUtils;
 

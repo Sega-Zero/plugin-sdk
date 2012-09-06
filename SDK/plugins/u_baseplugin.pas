@@ -563,6 +563,25 @@ type
     property OnTimer: TNotifyEvent read FOnTimer write FOnTimer;
   end;
 
+const
+  WM_SYNC = WM_USER + 1;
+
+type
+  TMainThreadSyncWnd = class
+  private
+    FHandle: HWND;
+    FOnSync: TNotifyEvent;
+  protected
+    procedure SyncProc(var Msg: TMessage); message WM_SYNC;
+    procedure WndProc(var Msg: TMessage); virtual;
+  public
+    constructor Create(AOnSync: TNotifyEvent);
+    destructor Destroy(); override;
+
+    property OnSync: TNotifyEvent read FOnSync write FOnSync;
+    property Handle: HWND read FHandle;
+  end;
+
 function QipPath: WideString;
 
 {$IFDEF NOFORMS}
@@ -593,6 +612,8 @@ constructor TCustomBaseQipPlugin.Create(const PluginService: IQIPPluginService);
 begin
 {$IFDEF LOGDEBUGINFO}
   LogSafe('PluginService is about to create');
+  if MainThreadID <> GetCurrentThreadId then
+    LogSafe('warning! MainThreadID <> GetCurrentThreadId');
 {$ENDIF}
   FCoreGUI   := nil;
   FCoreUtils := nil;
@@ -3960,6 +3981,34 @@ begin
 
   if Result <> '' then
     Result := WideExtractFilePath(Result);
+end;
+
+{ TMainThreadSyncWnd }
+
+constructor TMainThreadSyncWnd.Create;
+begin
+  inherited Create();
+  FHandle := AllocateHWnd(WndProc);
+  FOnSync := AOnSync;
+  if GetCurrentThreadId <> MainThreadID then
+    raise Exception.Create('Unable to create TMainThreadSyncWnd, wrong thread_id');
+end;
+
+destructor TMainThreadSyncWnd.Destroy;
+begin
+  FOnSync := nil;
+  DeallocateHWnd(FHandle);
+  inherited;
+end;
+
+procedure TMainThreadSyncWnd.SyncProc(var Msg: TMessage);
+begin
+  if Assigned(FOnSync) then FOnSync(Self);
+end;
+
+procedure TMainThreadSyncWnd.WndProc(var Msg: TMessage);
+begin
+  Dispatch(Msg);
 end;
 
 {$IFNDEF NOFORMS}

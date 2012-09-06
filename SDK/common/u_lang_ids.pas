@@ -2157,6 +2157,8 @@ const
   LI_NF_CANTLOAD      = 1981;
   LI_NF_SEND_NOPROTO  = 1982;
   LI_NF_SEND_MSGLIMIT = 1983;
+  LI_NF_CLEAR         = 1984;
+  LI_NF_ALLOWCLOSE    = 1985;
 
 implementation
 

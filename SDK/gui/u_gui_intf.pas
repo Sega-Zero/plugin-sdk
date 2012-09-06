@@ -995,13 +995,13 @@ type
     function GetHideSelection: BOOL; safecall;
     function GetPageRect: TRect; safecall;
     function GetParagraph: IParaAttributes; safecall;
-    function GetPlainText: BOOL; safecall;
+    function GetFormattedText: IString; safecall;
     function GetSelAttributes: ITextAttributes; safecall;
     procedure SetDefAttributes(Value: ITextAttributes); safecall;
     procedure SetHideScrollBars(Value: BOOL); safecall;
     procedure SetHideSelection(Value: BOOL); safecall;
     procedure SetPageRect(Value: TRect); safecall;
-    procedure SetPlainText(Value: BOOL); safecall;
+    procedure SetFormattedText(Value: IString); safecall;
     procedure SetSelAttributes(Value: ITextAttributes); safecall;
 
     property DefAttributes: ITextAttributes read GetDefAttributes write SetDefAttributes;
@@ -1009,7 +1009,7 @@ type
     property HideSelection: BOOL read GetHideSelection write SetHideSelection;
     property PageRect: TRect read GetPageRect write SetPageRect;
     property Paragraph: IParaAttributes read GetParagraph ;
-    property PlainText: BOOL read GetPlainText write SetPlainText;
+    property FormattedText: IString read GetFormattedText write SetFormattedText;
     property SelAttributes: ITextAttributes read GetSelAttributes write SetSelAttributes;
 
   end;
@@ -2196,6 +2196,17 @@ type
 
   end;
   
+  IDialogs = interface
+  ['{D6BD0F6B-A951-446A-A424-E3DE8BD351FA}']
+    function ShowOpen(const ParentWnd: HWND; const Caption, FileName, Filter: IString; Flags: TOFNOptions = [ofnFILEMUSTEXIST, ofnENABLESIZING]): IString; safecall;
+    function ShowSave(const ParentWnd: HWND; const Caption, FileName: IString; var Filter: IString; Flags: TOFNOptions = [ofnFILEMUSTEXIST, ofnENABLESIZING]): IString; safecall;
+    function ShowBrowseFolder(const ParentWnd: HWND; const Caption, Title, Dir: IString; Flags: TBIFOptions = [boNewDialogStyle, boEditBox, boUAHint]): IString; safecall;
+
+    function ShowYesNo(const ParentWnd: HWND; const Caption, Info, CheckText, IconUri: IString; Btns: TDialogBtnStyles; var Checked: BOOL; HelpText: IString = nil; HelpUrl: IString = nil): TModalResult; safecall;
+    function ShowInput(const ParentWnd: HWND; const Caption, Info, IconUri: IString; var Value: IString): TModalResult; safecall;
+    function ShowEnterPass(const ParentWnd: HWND; var Pass: IString): TModalResult; safecall;
+    function ShowNewPass(const ParentWnd: HWND; var CurPass, NewPass: IString): TModalResult; safecall;
+  end;
 
 implementation
 
