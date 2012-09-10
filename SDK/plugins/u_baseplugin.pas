@@ -471,8 +471,8 @@ type
 
     (* useful properies *)
     property Enabled: Boolean read FEnabled;
-    property CoreSDkMajorVersion: Integer read FCoreMajVer;
-    property CoreSDkMinorVersion: Integer read FCoreMinVer;
+    property CoreSdkMajorVersion: Integer read FCoreMajVer;
+    property CoreSdkMinorVersion: Integer read FCoreMinVer;
     property SoundEnabled: Boolean read IsSoundEnabled write SetSoundEnabled;
     property Options: TPluginSpecific read FOptions write SetOptions;
     property CoreLanguage: WideString read FLanguage;
