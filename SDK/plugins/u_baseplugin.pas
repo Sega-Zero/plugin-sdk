@@ -577,6 +577,7 @@ type
   public
     constructor Create(AOnSync: TNotifyEvent);
     destructor Destroy(); override;
+    procedure DefaultHandler(var Message); override;
 
     property OnSync: TNotifyEvent read FOnSync write FOnSync;
     property Handle: HWND read FHandle;
@@ -3992,6 +3993,12 @@ begin
   FOnSync := AOnSync;
   if GetCurrentThreadId <> MainThreadID then
     raise Exception.Create('Unable to create TMainThreadSyncWnd, wrong thread_id');
+end;
+
+procedure TMainThreadSyncWnd.DefaultHandler(var Message);
+begin
+  with TMessage(Message) do
+    Result := DefWindowProcW(FHandle, Msg, WParam, LParam);
 end;
 
 destructor TMainThreadSyncWnd.Destroy;
