@@ -63,12 +63,10 @@ type
 
     //IPaintEvents
     procedure Paint(sender: IUnknown); safecall;
-    procedure ToolBarAdnvancedCustomDraw(sender: IToolBar; const ARect: TRect; Stage: TCustomDrawStage; var DefaultDraw: BOOL); safecall;
     procedure ToolBarCustomDraw(sender: IToolBar; const ARect: TRect; var DefaultDraw: BOOL); safecall;
     procedure ToolBarCustomDrawButton(sender: IToolBar; Button: IToolButton; State: TCustomDrawState; var DefaultDraw: BOOL); safecall;
-    procedure ListDrawItem(Control: IWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState); safecall;
-    procedure MenuItemDrawItem(sender: IUnknown; ACanvas: ICanvas; ARect: TRect; Selected: BOOL); safecall;
-    procedure MenuItemAdvancedDrawItem(sender: IUnknown; ACanvas: ICanvas; ARect: TRect; State: TOwnerDrawState); safecall;
+    procedure ListDrawItem(Control: IWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL); safecall;
+    procedure MenuItemDrawItem(sender: IUnknown; ACanvas: ICanvas; ARect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL); safecall;
 
     //ITimerEvents
     procedure DidTimer(sender: IUnknown); safecall;
@@ -661,19 +659,13 @@ begin
 end;
 
 procedure TControlEvents.ListDrawItem(Control: IWinControl; Index: Integer;
-  Rect: TRect; State: TOwnerDrawState);
-begin
-
-end;
-
-procedure TControlEvents.MenuItemAdvancedDrawItem(sender: IInterface;
-  ACanvas: ICanvas; ARect: TRect; State: TOwnerDrawState);
+  Rect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL);
 begin
 
 end;
 
 procedure TControlEvents.MenuItemDrawItem(sender: IInterface;
-  ACanvas: ICanvas; ARect: TRect; Selected: BOOL);
+  ACanvas: ICanvas; ARect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL);
 begin
 
 end;
@@ -823,12 +815,6 @@ end;
 procedure TControlEvents.SkinChanged(NewSkinName: IString);
 begin
   Owner.UpdateGraphics;
-end;
-
-procedure TControlEvents.ToolBarAdnvancedCustomDraw(sender: IToolBar;
-  const ARect: TRect; Stage: TCustomDrawStage; var DefaultDraw: BOOL);
-begin
-
 end;
 
 procedure TControlEvents.ToolBarCustomDraw(sender: IToolBar;

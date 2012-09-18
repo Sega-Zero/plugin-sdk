@@ -158,7 +158,7 @@ type
     procedure AlignControls(AControl: IControl; Rect: TRect); safecall;
     function CanFocus: BOOL; safecall;
     function ContainsControl(Ctrl: IControl): BOOL; safecall;
-    function ControlAtPos(Pos: TPoint; AllowDisabled: BOOL; AllowWinControls: Boolean = False): IControl; safecall;
+    function ControlAtPos(Pos: TPoint; AllowDisabled: BOOL; AllowWinControls: BOOL = False): IControl; safecall;
     procedure CreateHandle; safecall;
     procedure CreateParams(Params: TCreateParams); safecall;
     procedure DisableAlign; safecall;
@@ -577,7 +577,6 @@ type
     function GetDropdownMenu: IPopupMenu; safecall;
     function GetGrouped: BOOL; safecall;
     function GetHint: IString; safecall;
-    function GetImageIndex: integer; safecall;
     function GetImageURI: IString; safecall;
     function GetIndeterminate: BOOL; safecall;
     function GetIndex: Integer; safecall;
@@ -592,7 +591,6 @@ type
     procedure SetDropdownMenu(Value: IPopupMenu); safecall;
     procedure SetGrouped(Value: BOOL); safecall;
     procedure SetHint(Value: IString); safecall;
-    procedure SetImageIndex(Value: integer); safecall;
     procedure SetImageURI(Value: IString); safecall;
     procedure SetIndeterminate(Value: BOOL); safecall;
     procedure SetMarked(Value: BOOL); safecall;
@@ -607,7 +605,6 @@ type
     property DropdownMenu: IPopupMenu read GetDropdownMenu write SetDropdownMenu;
     property Grouped: BOOL read GetGrouped write SetGrouped;
     property Hint: IString read GetHint write SetHint;
-    property ImageIndex: integer read GetImageIndex write SetImageIndex;
     property ImageURI: IString read GetImageURI write SetImageURI;
     property Indeterminate: BOOL read GetIndeterminate write SetIndeterminate;
     property Index: Integer read GetIndex ;
@@ -1162,14 +1159,11 @@ type
     function GetAltSize: Integer; safecall;
     function GetAutoCheck: BOOL; safecall;
     function GetBreak: TMenuBreak; safecall;
-    function GetCLDataType: Byte; safecall;
-    function GetCLItemData: LongInt; safecall;
     function GetCaption: IString; safecall;
     function GetChecked: BOOL; safecall;
     function GetCommand: Word; safecall;
     function GetCount: Integer; safecall;
     function GetDefault: BOOL; safecall;
-    function GetDllHandle: LongInt; safecall;
     function GetEnabled: BOOL; safecall;
     function GetGroupIndex: Byte; safecall;
     function GetHandle: HMENU; safecall;
@@ -1192,12 +1186,9 @@ type
     procedure SetAltSize(Value: Integer); safecall;
     procedure SetAutoCheck(Value: BOOL); safecall;
     procedure SetBreak(Value: TMenuBreak); safecall;
-    procedure SetCLDataType(Value: Byte); safecall;
-    procedure SetCLItemData(Value: LongInt); safecall;
     procedure SetCaption(Value: IString); safecall;
     procedure SetChecked(Value: BOOL); safecall;
     procedure SetDefault(Value: BOOL); safecall;
-    procedure SetDllHandle(Value: LongInt); safecall;
     procedure SetEnabled(Value: BOOL); safecall;
     procedure SetGroupIndex(Value: Byte); safecall;
     procedure SetHeadColor(Value: TColor); safecall;
@@ -1218,14 +1209,11 @@ type
     property AlternateFontSize: Integer read GetAltSize write SetAltSize;
     property AutoCheck: BOOL read GetAutoCheck write SetAutoCheck;
     property Break: TMenuBreak read GetBreak write SetBreak;
-    property CLDataType: Byte read GetCLDataType write SetCLDataType;
-    property CLItemData: LongInt read GetCLItemData write SetCLItemData;
     property Caption: IString read GetCaption write SetCaption;
     property Checked: BOOL read GetChecked write SetChecked;
     property Command: Word read GetCommand ;
     property Count: Integer read GetCount ;
     property Default: BOOL read GetDefault write SetDefault;
-    property DllHandle: LongInt read GetDllHandle write SetDllHandle;
     property Enabled: BOOL read GetEnabled write SetEnabled;
     property GroupIndex: Byte read GetGroupIndex write SetGroupIndex;
     property Handle: HMENU read GetHandle ;
@@ -2121,8 +2109,6 @@ type
   
   IPage = interface (IWinControl)
   ['{B467FD3E-1B4C-43D4-93B3-BEA52B0D9B20}']
-    procedure Paint; safecall;
-    procedure SetBounds(ALeft: Integer; ATop: Integer; AWidth: Integer; AHeight: Integer); safecall;
     function GetPageIndex: Integer; safecall;
     function GetPageList: IPageList; safecall;
     function GetPageVisible: BOOL; safecall;
@@ -2196,6 +2182,8 @@ type
 
   end;
   
+
+
   IDialogs = interface
   ['{D6BD0F6B-A951-446A-A424-E3DE8BD351FA}']
     function ShowOpen(const ParentWnd: HWND; const Caption, FileName, Filter: IString; Flags: TOFNOptions = [ofnFILEMUSTEXIST, ofnENABLESIZING]): IString; safecall;
@@ -2207,7 +2195,6 @@ type
     function ShowEnterPass(const ParentWnd: HWND; var Pass: IString): TModalResult; safecall;
     function ShowNewPass(const ParentWnd: HWND; var CurPass, NewPass: IString): TModalResult; safecall;
   end;
-
 implementation
 
 end.

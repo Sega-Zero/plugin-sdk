@@ -68,12 +68,10 @@ type
   IPaintEvents = interface
   ['{82B1CCF9-289D-44C3-80A3-1452BBE66CA9}']
     procedure Paint(sender: IUnknown); safecall;
-    procedure ToolBarAdnvancedCustomDraw(sender: IToolBar; const ARect: TRect; Stage: TCustomDrawStage; var DefaultDraw: BOOL); safecall;
     procedure ToolBarCustomDraw(sender: IToolBar; const ARect: TRect; var DefaultDraw: BOOL); safecall;
     procedure ToolBarCustomDrawButton(sender: IToolBar; Button: IToolButton; State: TCustomDrawState; var DefaultDraw: BOOL); safecall;
-    procedure ListDrawItem(Control: IWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState); safecall;
-    procedure MenuItemDrawItem(sender: IUnknown; ACanvas: ICanvas; ARect: TRect; Selected: BOOL); safecall;
-    procedure MenuItemAdvancedDrawItem(sender: IUnknown; ACanvas: ICanvas; ARect: TRect; State: TOwnerDrawState); safecall;
+    procedure ListDrawItem(Control: IWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL); safecall;
+    procedure MenuItemDrawItem(sender: IUnknown; ACanvas: ICanvas; ARect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL); safecall;
   end;
 
   IChangeEvents = interface
@@ -167,7 +165,7 @@ type
     procedure CompareNodes(Sender: IUnknown; Node1, Node2: PVirtualNode; Column: TColumnIndex; var Result: Integer); safecall;
     procedure DidInitNode(Sender: IUnknown; Node: PVirtualNode; var InitialStates: TVirtualNodeInitStates); safecall;
     procedure DidFreeNode(Sender: IUnknown; Node: PVirtualNode); safecall;
-    procedure IncrementalSearch(Sender: IUnknown; Node: PVirtualNode; const SearchText: IString; var Result: Integer); safecall;
+    procedure IncrementalSearch(Sender: IUnknown; Node: PVirtualNode; const SearchText: IString; var Result: Integer; var Handled: BOOL); safecall;
 
     procedure NodeMeasureItem(Sender: IUnknown; TargetCanvas: ICanvas; Node: PVirtualNode; var NodeHeight: Integer); safecall;
 
@@ -206,7 +204,6 @@ type
                       var LineBreakStyle: TTooltipLineBreakStyle; var HintText: IString); safecall;
     procedure GetPopupMenu(Sender: IUnknown; Node: PVirtualNode; Column: TColumnIndex;
                            const P: TPoint; var AskParent: BOOL; var PopupMenu: IPopupMenu); safecall;
-    procedure GetLineStyle(Sender: IUnknown); safecall;
     procedure GetText(Sender: IUnknown; Node: PVirtualNode; Column: TColumnIndex;
                       TextType: TVSTTextType; var Text: IString); safecall;
   end;

@@ -1556,10 +1556,10 @@ type
 
   TCopyMode = Longint;
 
-  TCanvasStates = (csHandleValid = CS_FLAG_HANDLEVALID,
-                   csFontValid   = CS_FLAG_FONTVALID,
-                   csPenValid    = CS_FLAG_PENVALID,
-                   csBrushValid  = CS_FLAG_BRUSHVALID,
+  TCanvasStates = (csHandleValid = CS_HANDLEVALID,
+                   csFontValid   = CS_FONTVALID,
+                   csPenValid    = CS_PENVALID,
+                   csBrushValid  = CS_BRUSHVALID,
                    csReserved    = FLAG_RESERVED);
 
   TCanvasState = set of TCanvasStates;

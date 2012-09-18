@@ -81,7 +81,7 @@ type
     procedure CompareNodes(Sender: IUnknown; Node1, Node2: PVirtualNode; Column: TColumnIndex; var Result: Integer); virtual; safecall;
     procedure DidInitNode(Sender: IUnknown; Node: PVirtualNode; var InitialStates: TVirtualNodeInitStates); virtual; safecall;
     procedure DidFreeNode(Sender: IUnknown; Node: PVirtualNode); virtual; safecall;
-    procedure IncrementalSearch(Sender: IUnknown; Node: PVirtualNode; const SearchText: IString; var Result: Integer); virtual; safecall;
+    procedure IncrementalSearch(Sender: IUnknown; Node: PVirtualNode; const SearchText: IString; var Result: Integer; var Handled: BOOL); virtual; safecall;
     procedure NodeMeasureItem(Sender: IUnknown; TargetCanvas: ICanvas; Node: PVirtualNode; var NodeHeight: Integer); virtual; safecall;
     procedure ShortenString(Sender: IUnknown; TargetCanvas: ICanvas; Node: PVirtualNode;
                             Column: TColumnIndex; const S: IString; TextSpace: Integer;
@@ -127,9 +127,8 @@ type
     procedure ToolBarAdnvancedCustomDraw(sender: IToolBar; const ARect: TRect; Stage: TCustomDrawStage; var DefaultDraw: BOOL); virtual; safecall;
     procedure ToolBarCustomDraw(sender: IToolBar; const ARect: TRect; var DefaultDraw: BOOL); virtual; safecall;
     procedure ToolBarCustomDrawButton(sender: IToolBar; Button: IToolButton; State: TCustomDrawState; var DefaultDraw: BOOL); virtual; safecall;
-    procedure ListDrawItem(Control: IWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState); virtual; safecall;
-    procedure MenuItemDrawItem(sender: IUnknown; ACanvas: ICanvas; ARect: TRect; Selected: BOOL); virtual; safecall;
-    procedure MenuItemAdvancedDrawItem(sender: IUnknown; ACanvas: ICanvas; ARect: TRect; State: TOwnerDrawState); virtual; safecall;
+    procedure ListDrawItem(Control: IWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL); virtual; safecall;
+    procedure MenuItemDrawItem(sender: IUnknown; ACanvas: ICanvas; ARect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL); virtual; safecall;
   public
     constructor Create(OnPaint : TGUINotifyEvent);
   end;
@@ -400,7 +399,8 @@ begin
 end;
 
 procedure TCustomTreeViewEvent.IncrementalSearch(Sender: IInterface;
-  Node: PVirtualNode; const SearchText: IString; var Result: Integer);
+  Node: PVirtualNode; const SearchText: IString; var Result: Integer;
+  var Handled: BOOL);
 begin
 
 end;
@@ -521,20 +521,14 @@ begin
 end;
 
 procedure TCustomPaintEvent.ListDrawItem(Control: IWinControl;
-  Index: Integer; Rect: TRect; State: TOwnerDrawState);
+  Index: Integer; Rect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL);
 begin
   if Assigned(FOnListDrawItem) then
     FOnListDrawItem(Control, Index, Rect, State);
 end;
 
-procedure TCustomPaintEvent.MenuItemAdvancedDrawItem(sender: IInterface;
-  ACanvas: ICanvas; ARect: TRect; State: TOwnerDrawState);
-begin
-
-end;
-
 procedure TCustomPaintEvent.MenuItemDrawItem(sender: IInterface;
-  ACanvas: ICanvas; ARect: TRect; Selected: BOOL);
+  ACanvas: ICanvas; ARect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL);
 begin
 
 end;
