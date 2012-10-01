@@ -10,7 +10,7 @@ unit u_plugin_info;
 
 interface
 
-uses Windows, u_plugin_msg, u_common, u_gui_const, u_string;
+uses Windows, u_plugin_msg, u_common, u_gui_const, u_string, ActiveX;
 
 const
   QIP_SDK_VER_MAJOR = 1;
@@ -332,6 +332,19 @@ type
     property ID          : TWidgetID read GetID; //readonly
     property WidgetClass : TWidgetClass read GetClass; //readonly
     property State       : TWidgetStateSet read GetState write SetState;
+  end;
+
+  {see http://wiki.qip.ru/SDK Interfaces#IWidgetDropTarget}
+  IWidgetDropTarget = interface(IWidget)
+  ['{1B3D321E-2921-45AC-B85C-A82B445B9845}']
+    //Effect is DROPEFFECT flags (http://msdn.microsoft.com/en-us/library/windows/desktop/ms693457%28v=vs.85%29.aspx)
+    procedure DragOver(const Files: IStringList; DataObject: IDataObject;
+      Shift: u_gui_const.TShiftState; Pt: TPoint;
+      Mode: u_gui_const.TDropMode; State: u_gui_const.TDragState; 
+      var Effect: Integer; var Accept: Boolean);
+    procedure DragDrop(const Files: IStringList; DataObject: IDataObject;
+      Shift: u_gui_const.TShiftState; Pt: TPoint;
+      Mode: u_gui_const.TDropMode; var Effect: Integer);
   end;
 
   {see http://wiki.qip.ru/SDK_Types#TPluginBBHint}

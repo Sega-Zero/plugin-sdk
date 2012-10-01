@@ -5,7 +5,7 @@ interface
 
 uses
   u_plugin_info, u_plugin_msg, u_common, u_BasePlugin, Windows, u_public_intf,
-  u_gui_intf, u_gui_events, u_gui_const, u_string, SettingsUnit;
+  u_gui_intf, u_gui_events, u_gui_const, u_string, WndUnit, ActiveX;
 
 const
   PLUGIN_VER_MAJOR = 1;
@@ -24,13 +24,13 @@ const
 type
   TQipPlugin = class;
 
-  TSampleWidget = class(TWidgetItem)
+  TSampleWidget = class(TWidgetItem, IWidgetDropTarget)
   private
     FPopupMenuVisible: Boolean;
     FThemeServices: IThemeServices;
     FHighlightSettings, FHighlightRefresh: Boolean;
     FSettingsPressed, FRefreshPressed: Boolean;
-
+    FFiles: IStringList;
     function HintSize(const DC: HDC): TSize;
   public
     function GetOptionsRect: TRect;
@@ -48,21 +48,15 @@ type
     procedure Draw    (const DC: HDC; DrawRect: TRect; MousePt: TPoint); override; safecall;
     procedure DrawHint(const DC: HDC; DrawRect: TRect); override; safecall;
   public
-    constructor Create(AOwner: TCustomBaseQipPlugin; AClass: TWidgetClass; AllowCompact: Boolean);
-    destructor Destroy; override;
-  end;
-
-  TMenuEventHandler = class (TInterfacedObject, IMouseClickEvents)
-  private
-    FPlugin: TQipPlugin;
+    procedure DragOver(const Files: IStringList; DataObject: IDataObject;
+      Shift: u_gui_const.TShiftState; Pt: TPoint;
+      Mode: u_gui_const.TDropMode; State: u_gui_const.TDragState; 
+      var Effect: Integer; var Accept: Boolean);
+    procedure DragDrop(const Files: IStringList; DataObject: IDataObject;
+      Shift: u_gui_const.TShiftState; Pt: TPoint;
+      Mode: u_gui_const.TDropMode; var Effect: Integer);
   public
-    procedure Click(sender: IUnknown); safecall;
-    procedure DblClick(sender: IUnknown); safecall;
-    procedure MouseDown(sender: IUnknown; Button: TMouseButton; Shift: TShiftState; X, Y: Integer); safecall;
-    procedure MouseUp(sender: IUnknown; Button: TMouseButton; Shift: TShiftState; X, Y: Integer); safecall;
-    procedure UpDownClick(sender: IUnknown; Button: TUDBtnType); safecall;
-
-    constructor Create(APlugin: TQipPlugin);
+    constructor Create(AOwner: TCustomBaseQipPlugin; AClass: TWidgetClass; AllowCompact: Boolean);
     destructor Destroy; override;
   end;
 
@@ -73,12 +67,16 @@ type
     FCLWidget, FMWWidget: IWidget;
 
     FSettingsWnd: TSettings;
+    FSyncObj: TMainThreadSyncWnd;
 
     procedure CreateMenu;
     procedure FreeMenu;
     function  CreateMenuItem: IMenuItem;
     procedure RecreateMenu;
 
+    procedure MenuItemClick(Sender: IComponent);
+    procedure DoFreeSettings(Sender: TObject);
+    procedure FreeSettings(Sender: TObject);
   public
     constructor Create(const PluginService: IQIPPluginService);
     destructor Destroy; override;
@@ -97,7 +95,7 @@ type
 implementation
 
 uses
-  u_gui_graphics, u_lang_ids, SysUtils;
+  u_gui_graphics, u_lang_ids, SysUtils, u_gui_helpers;
 
 {$R icon.Res}
 
@@ -139,6 +137,7 @@ begin
   FSettingsMenu := nil;
   FCLWidget     := nil;
   FMWWidget     := nil;
+  FSyncObj      := TMainThreadSyncWnd.Create(DoFreeSettings);
 end;
 
 procedure TQipPlugin.CreateMenu;
@@ -156,7 +155,7 @@ begin
   Result := nil;
   if CoreGUI = nil then Exit;
   if FSettingsMenu = nil then Exit;
-  CoreGUI.CreateControl(FSettingsMenu, IMenuItem, Result, TMenuEventHandler.Create(Self));
+  CoreGUI.CreateControl(FSettingsMenu, IMenuItem, Result, TCustomClickEvent.Create(MenuItemClick));
 end;
 
 destructor TQipPlugin.Destroy;
@@ -165,7 +164,8 @@ begin
   Widgets_Clear;
   FCLWidget := nil;
   FMWWidget := nil;
-  
+
+  FreeAndNil(FSyncObj);
   DeleteObject(FPlugIco);
   FPlugIco := 0;
   inherited;
@@ -173,14 +173,25 @@ end;
 
 procedure TQipPlugin.FinalPlugin;
 begin
+  DoFreeSettings(Self);
   inherited;
-  FSettingsWnd.Close;
-  FreeAndNil(FSettingsWnd);
 end;
 
 procedure TQipPlugin.FreeMenu;
 begin
   FSettingsMenu := nil;
+end;
+
+procedure TQipPlugin.DoFreeSettings(Sender: TObject);
+begin
+  if Assigned(FSettingsWnd) then
+    FreeAndNil(FSettingsWnd);
+end;
+
+procedure TQipPlugin.FreeSettings(Sender: TObject);
+begin
+  //async free window and TSettings
+  PostMessage(FSyncObj.Handle, WM_SYNC, 0, 0);
 end;
 
 procedure TQipPlugin.GetPluginInformation(var VersionMajor,
@@ -205,8 +216,6 @@ begin
   //you can create your widget wrappers right in InitPlugin, or any time after first InitPlugin call
   FCLWidget := TSampleWidget.Create(Self, wgcCL, True);
   FMWWidget := TSampleWidget.Create(Self, wgcMsg, True);
-
-  FSettingsWnd := TSettings.Create(CoreGUI, CoreUtils);
 end;
 
 procedure TQipPlugin.LoadOptions;
@@ -228,6 +237,43 @@ begin
     Widgets_Add(FMWWidget);
 end;
 
+procedure TQipPlugin.MenuItemClick(Sender: IComponent);
+var
+  mnu: IMenuItem;
+  spec: TPluginSpecific;
+begin
+  if Supports(Sender, IMenuItem, mnu) then
+  case mnu.Tag of
+    1: begin
+         spec := Options;
+         spec.Bool1 := not spec.Bool1;
+         Options := spec;
+         mnu.Checked := Options.Bool1;
+
+         if Options.Bool1 then
+           Widgets_Add(FCLWidget)
+         else
+           Widgets_Delete(FCLWidget.ID);
+       end;
+    2: begin
+         spec := Options;
+         spec.Bool2 := not spec.Bool2;
+         Options := spec;
+         mnu.Checked := Options.Bool2;
+
+         if Options.Bool2 then
+           Widgets_Add(FMWWidget)
+         else
+           Widgets_Delete(FMWWidget.ID);
+       end;
+    3: begin
+         if not Assigned(FSettingsWnd) then
+           FSettingsWnd := TSettings.Create(CoreGUI, CoreUtils, FreeSettings);
+         FSettingsWnd.Show;
+       end;
+  end;
+end;
+
 procedure TQipPlugin.OnOptions;
 var
   CP: TPoint;
@@ -242,78 +288,36 @@ begin
   Result := FPlugIco;
 end;
 
-{ TMenuEventHandler }
-
-procedure TMenuEventHandler.Click(sender: IInterface);
+procedure TQipPlugin.RecreateMenu;
 var
-  mnu: IMenuItem;
-  spec: TPluginSpecific;
+  MI: IMenuItem;
 begin
-  if FPlugin = nil then Exit;
+  FreeMenu;
+  CreateMenu;
 
-  sender.QueryInterface(IMenuItem, mnu);
-  if Assigned(mnu) then
-  case mnu.Tag of
-    1: begin
-         spec := FPlugin.Options;
-         spec.Bool1 := not spec.Bool1;
-         FPlugin.Options := spec;
-         mnu.Checked := FPlugin.Options.Bool1;
+  if FSettingsMenu <> nil then
+  begin
+    MI         := CreateMenuItem();
+    MI.Tag     := 1;
+    MI.Caption := GetIString(LI_RADIO_SHOW_IN_CL);
+    MI.Checked := Options.Bool1;
+    FSettingsMenu.Items.Add(MI);
 
-         if FPlugin.Options.Bool1 then
-           FPlugin.Widgets_Add(FPlugin.FCLWidget)
-         else
-           FPlugin.Widgets_Delete(FPlugin.FCLWidget.ID);
-       end;
-    2: begin
-         spec := FPlugin.Options;
-         spec.Bool2 := not spec.Bool2;
-         FPlugin.Options := spec;
-         mnu.Checked := FPlugin.Options.Bool2;
+    MI         := CreateMenuItem();
+    MI.Tag     := 2;
+    MI.Checked := Options.Bool2;
+    MI.Caption := GetIString(LI_RADIO_SHOW_IN_MW);
+    FSettingsMenu.Items.Add(MI);
 
-         if FPlugin.Options.Bool2 then
-           FPlugin.Widgets_Add(FPlugin.FMWWidget)
-         else
-           FPlugin.Widgets_Delete(FPlugin.FMWWidget.ID);
-       end;
-    3: if Assigned(FPlugin.FSettingsWnd) then
-         FPlugin.FSettingsWnd.Show;
+    MI         := CreateMenuItem();
+    MI.Caption := GetIString('-');
+    FSettingsMenu.Items.Add(MI);
+
+    MI         := CreateMenuItem();
+    MI.Tag     := 3;
+    MI.Caption := GetIString(LI_SETTINGS);
+    FSettingsMenu.Items.Add(MI);
   end;
-end;
-
-constructor TMenuEventHandler.Create(APlugin: TQipPlugin);
-begin
-  inherited Create;
-  FPlugin := APlugin;
-end;
-
-procedure TMenuEventHandler.DblClick(sender: IInterface);
-begin
-
-end;
-
-destructor TMenuEventHandler.Destroy;
-begin
-
-  inherited;
-end;
-
-procedure TMenuEventHandler.MouseDown(sender: IInterface;
-  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-begin
-
-end;
-
-procedure TMenuEventHandler.MouseUp(sender: IInterface;
-  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-begin
-
-end;
-
-procedure TMenuEventHandler.UpDownClick(sender: IInterface;
-  Button: TUDBtnType);
-begin
-
 end;
 
 { TSampleWidget }
@@ -351,37 +355,38 @@ begin
     Canvas.Handle := DC;
     Canvas.Brush.Style := bsClear;
 
-    if PtInRect(DrawRect, MousePt) or FPopupMenuVisible then
+    {if PtInRect(DrawRect, MousePt) or FPopupMenuVisible then
     begin
       DrawOptions(Canvas, DrawRect);
       Exit;
-    end;
+    end;}
     
     if IsCompact then
-      S := GetIString('skin://graph,308')
+      S := GetIString('skin://graph,20')
     else
-      S := GetIString('skin://graph,20');
+      S := GetIString('skin://graph,308');
 
     R := DrawRect;
+    if IsCompact then
+      InflateRect(R, -1, -1)
+    else
+      InflateRect(R, -CL_PADDING_X, -CL_PADDING_Y);
     if DrawRect.Bottom - DrawRect.Top < MulDiv(16, SCREEN_PPI, 96)*2 then
     begin
-      R.Left   := DrawRect.Left + 4;
       R.Top    := DrawRect.Top + (DrawRect.Bottom - DrawRect.Top - MulDiv(16, SCREEN_PPI, 96)) div 2;
       R.Bottom := R.Top + MulDiv(16, SCREEN_PPI, 96);
     end;
-    R.Right  := R.Left + (R.Bottom - R.Top);
     if IsCompact then
-    begin
-      R.Left  := R.Left + 4;
-      R.Right := R.Left + MulDiv(16, SCREEN_PPI, 96);
-    end;
+      R.Right := R.Left + MulDiv(16, SCREEN_PPI, 96)
+    else
+      R.Right := R.Left + (R.Bottom - R.Top);
 
     Canvas.StretchDraw(R, S, smZoom);
 
     if not TQipPlugin(FOwner).GetFontColorSettings(FontName, FontSize, Colors) then
     begin
-      FontName     := 'Tahoma';
-      FontSize     := 8;
+      FontName     := SCREEN_FONT_NAME;
+      FontSize     := SCREEN_FONT_SIZE;
       Colors.Group := $005E5E5E;
     end;
     Canvas.Font.Name  := GetIString(FontName);
@@ -392,8 +397,11 @@ begin
       S := GetIString('contact-list widget')
     else
       S := GetIString('message window widget');
+    if FFiles <> nil then
+      S := FFiles.Text;
+    FontName := s.wString;
 
-    R.Left   := R.Right + 10;
+    R.Left   := R.Right + CL_TEXT_PADDING;
     R.Right  := DrawRect.Right;
     R.Top    := DrawRect.Top;
     R.Bottom := DrawRect.Bottom;
@@ -548,17 +556,22 @@ begin
   end;
 
   try
-
-    if Button <> mbLeft then exit;
-
-    rct        := Bounds;
-    rct.Left   := rct.Left + 4 + 4;
-    rct.Right  := rct.Left + MulDiv(16, SCREEN_PPI, 96);
-    rct.Top    := rct.Top + ((rct.Bottom - rct.Top - MulDiv(16, SCREEN_PPI, 96)) div 2);
-    rct.Bottom := rct.Top + MulDiv(16, SCREEN_PPI, 96);
-    if PtInRect(rct, cp) or (PtInRect(GetRefreshRect, MousePt) and FRefreshPressed) then
-      TQIPPlugin(FOwner).ShowFade('refresh action', 'this is the refresh action', 0, 2);
-
+    case Button of 
+      mbRight:
+        begin
+          TQIPPlugin(FOwner).OnOptions;
+        end;
+      mbLeft:
+        begin
+          rct        := Bounds;
+          rct.Left   := rct.Left + 4 + 4;
+          rct.Right  := rct.Left + MulDiv(16, SCREEN_PPI, 96);
+          rct.Top    := rct.Top + ((rct.Bottom - rct.Top - MulDiv(16, SCREEN_PPI, 96)) div 2);
+          rct.Bottom := rct.Top + MulDiv(16, SCREEN_PPI, 96);
+          if PtInRect(rct, cp) or (PtInRect(GetRefreshRect, MousePt) and FRefreshPressed) then
+            TQIPPlugin(FOwner).ShowFade('refresh action', 'this is the refresh action', 0, 2);
+        end;
+    end;
   finally
     FRefreshPressed  := False;
     FSettingsPressed := False;
@@ -566,37 +579,22 @@ begin
   end;
 end;
 
-procedure TQipPlugin.RecreateMenu;
-var
-  MI: IMenuItem;
-
+procedure TSampleWidget.DragDrop(const Files: IStringList; DataObject: IDataObject;
+  Shift: u_gui_const.TShiftState; Pt: TPoint;
+  Mode: u_gui_const.TDropMode; var Effect: Integer);
 begin
-  FreeMenu;
-  CreateMenu;
+  Effect := DROPEFFECT_COPY;
+  FFiles := Files;
+end;
 
-  if FSettingsMenu <> nil then
-  begin
-    MI         := CreateMenuItem();
-    MI.Tag     := 1;
-    MI.Caption := GetIString(LI_RADIO_SHOW_IN_CL);
-    MI.Checked := Options.Bool1;
-    FSettingsMenu.Items.Add(MI);
-
-    MI         := CreateMenuItem();
-    MI.Tag     := 2;
-    MI.Checked := Options.Bool2;
-    MI.Caption := GetIString(LI_RADIO_SHOW_IN_MW);
-    FSettingsMenu.Items.Add(MI);
-
-    MI         := CreateMenuItem();
-    MI.Caption := GetIString('-');
-    FSettingsMenu.Items.Add(MI);
-
-    MI         := CreateMenuItem();
-    MI.Tag     := 3;
-    MI.Caption := GetIString(LI_SETTINGS);
-    FSettingsMenu.Items.Add(MI);
-  end;
+procedure TSampleWidget.DragOver(const Files: IStringList; DataObject: IDataObject;
+  Shift: u_gui_const.TShiftState; Pt: TPoint;
+  Mode: u_gui_const.TDropMode; State: u_gui_const.TDragState; 
+  var Effect: Integer; var Accept: Boolean);
+begin
+  FFiles := nil;
+  Effect := DROPEFFECT_LINK;
+  Accept := True;
 end;
 
 end.

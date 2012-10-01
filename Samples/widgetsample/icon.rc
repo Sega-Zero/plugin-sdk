@@ -1,4 +1,4 @@
-PLUGICO ICON icon.ico
+PLUGICO ICON "images\icon.ico"
 refresh RCDATA "images\refresh.png"
 settings RCDATA "images\settings.png"
 refresh_small RCDATA "images\refresh_small.png"

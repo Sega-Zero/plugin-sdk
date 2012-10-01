@@ -1440,6 +1440,17 @@ const
   TW_FRAMEBOTTOMSIZINGTEMPLATE      = 103;
   TW_SMALLFRAMEBOTTOMSIZINGTEMPLATE = 104;
 
+  {TDropMode}
+  DM_Nowhere  = 0;
+  DM_Above    = 1;
+  DM_OnNode   = 2;
+  DM_Below    = 3;
+
+  {TDragState}
+  DS_DragEnter = 0;
+  DS_DragLeave = 1;
+  DS_DragMove  = 2;
+
   FLAG_RESERVED = 31;
   FLAG_RESERVED64 = 63;
 
@@ -2698,6 +2709,18 @@ type
     WindowClass: TWndClass;
     WinClassName: array[0..63] of Char;
   end;
+
+  TDragState = (
+    dsDragEnter = DS_DragEnter,
+    dsDragLeave = DS_DragLeave,
+    dsDragMove  = DS_DragMove);
+
+  TDropMode = (
+    dmNowhere = DM_Nowhere,
+    dmAbove   = DM_Above,
+    dmOnNode  = DM_OnNode,
+    dmBelow   = DM_Below);
+
 
   ////////////////////////////////////////
   //dialogs

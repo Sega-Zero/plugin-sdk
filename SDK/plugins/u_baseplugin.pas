@@ -16,7 +16,7 @@ interface
 uses
   Windows, Messages, Consts, SysUtils, {$IFNDEF NOGRAPHICS}Graphics, {$ENDIF} Classes,
   u_plugin_info, u_plugin_msg, u_common, {$IFDEF USEPOPUPEX}u_PopupEx, {$ENDIF}
-  u_gui_const, u_gui_intf, u_public_intf, u_gui_graphics, u_gui_events;
+  u_gui_const, u_gui_intf, u_public_intf, u_gui_graphics, u_gui_events, u_gui_helpers;
 
 type
 {$IFDEF NOGRAPHICS}
@@ -467,7 +467,7 @@ type
     function GetSkinFN(): PWideChar;
     function GetSkinRes(ResID: WideString): WideString;
     procedure DrawSkinImage(ImageURI: WideString; DC: HDC; DrawRect: TRect);
-    function CreateTimer(Interval: Integer; Enabled: Boolean; OnTimer: TNotifyEvent): ITimer;
+    function CreateTimer(Interval: Integer; Enabled: Boolean; OnTimer: TGUINotifyEvent): ITimer;
 
     (* useful properies *)
     property Enabled: Boolean read FEnabled;
@@ -552,15 +552,6 @@ type
     function Bounds(): TRect;
     function IsHot(): Boolean;
     property Owner: TCustomBaseQipPlugin read FOwner;
-  end;
-
-  TTimerHandler = class(TInterfacedObject, ITimerEvents)
-  private
-    FOnTimer: TNotifyEvent;
-  protected
-    procedure DidTimer(sender: IInterface); safecall;
-  public
-    property OnTimer: TNotifyEvent read FOnTimer write FOnTimer;
   end;
 
 const
@@ -3688,12 +3679,11 @@ begin
     CoreUtils.Draw.DrawSkinIm3(DC, DrawRect, ImageURI);
 end;
 
-function TCustomBaseQipPlugin.CreateTimer(Interval: Integer; Enabled: Boolean; OnTimer: TNotifyEvent): ITimer;
+function TCustomBaseQipPlugin.CreateTimer(Interval: Integer; Enabled: Boolean; OnTimer: TGUINotifyEvent): ITimer;
 var
-  Handler: TTimerHandler;
+  Handler: TTimerEvents;
 begin
-  Handler := TTimerHandler.Create;
-  Handler.OnTimer := OnTimer;
+  Handler := TTimerEvents.Create(OnTimer);
   CoreGUI.CreateControl(nil, ITimer, Result, Handler);
   Result.Interval := Interval;
   Result.Enabled  := Enabled;
@@ -3798,7 +3788,7 @@ begin
   inherited Create();
   FOwner := AOwner;
   FClass := AClass;
-  FID    := FOwner.FPluginInfo.PluginName + WideString('_') + IntToStr(FOwner.FWidgetIDCounter);
+  FID    := WideFormat('%s_%.8x', [FOwner.FPluginInfo.PluginName, FOwner.FWidgetIDCounter]);//! core sort widgets with Windows.CompareStringW
   Inc(FOwner.FWidgetIDCounter);
 
   FState := [wgsNormal];
@@ -3960,18 +3950,6 @@ begin
   {do nothing}
 end;
 
-{ TTimerHandler }
-
-procedure TTimerHandler.DidTimer(sender: IInterface);
-begin
-  sender._AddRef;
-  try
-    if Assigned(FOnTimer) then FOnTimer(Self);
-  finally
-    sender._Release;
-  end;
-end;
-
 function QipPath: WideString;
 var
   buf: array[0..MAX_PATH - 1] of WideChar;
@@ -3998,7 +3976,7 @@ end;
 procedure TMainThreadSyncWnd.DefaultHandler(var Message);
 begin
   with TMessage(Message) do
-    Result := DefWindowProcW(FHandle, Msg, WParam, LParam);
+    Result := DefWindowProc(FHandle, Msg, WParam, LParam);
 end;
 
 destructor TMainThreadSyncWnd.Destroy;

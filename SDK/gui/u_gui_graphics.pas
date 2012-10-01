@@ -107,6 +107,8 @@ function BlendColor(C1, C2: TColor; W1: Integer): TColor;
 function Blend(C1, C2: TColor; W1: Integer): TColor;
 procedure SetContrast(var Color: TColor; BkgndColor: TColor; Threshold: Integer);
 
+function ColorToRGB(Color: TColor): Longint;
+
 implementation
 
 uses SysUtils;
@@ -309,6 +311,13 @@ begin
   if BkgndColor < 0 then BkgndColor := GetSysColor(BkgndColor and $FF);
   T := Threshold;
   if not IsContrastEnough(Color, BkgndColor, True, T) then AdjustContrast(Integer(Color), BkgndColor, T);
+end;
+
+function ColorToRGB(Color: TColor): Longint;
+begin
+  if Color < 0 then
+    Result := GetSysColor(Color and $000000FF) else
+    Result := Color;
 end;
 
 initialization

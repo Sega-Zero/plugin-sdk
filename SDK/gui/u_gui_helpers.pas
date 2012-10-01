@@ -6,9 +6,8 @@ uses
   u_gui_intf, u_gui_events, u_gui_const, u_gui_graphics, u_string;
 
 type
-  TOnEventsCallback  = procedure(Control: IComponent) of object;
-  TOnClose           = procedure(Sender: IUnknown; var Action: TCloseAction) of object;
-  TOnPropertyChanged = procedure(sender: IUnknown; component: IComponent) of object;
+  TOnClose           = procedure(Sender: IComponent; var Action: TCloseAction) of object;
+  TOnPropertyChanged = procedure(Sender: IUnknown; Component: IComponent) of object;
   TGUINotifyEvent    = procedure(Sender: IComponent) of object;
 
   TOnTreeGetText     = procedure(Sender: IVirtualTree; Node: PVirtualNode; Column: TColumnIndex;
@@ -18,22 +17,26 @@ type
   TOnInitNode        = procedure(Sender: IVirtualTree; Node: PVirtualNode; var InitialStates: TVirtualNodeInitStates) of object;
   TOnFreeNode        = procedure(Sender: IVirtualTree; Node: PVirtualNode) of object;
   TOnKeyUpDown       = procedure(Sender: IComponent; var Key: Word; Shift: TShiftState) of object;
-  TOnKeyPress        = procedure(sender: IComponent; var Key: Char) of object;
+  TOnKeyPress        = procedure(Sender: IComponent; var Key: Char) of object;
   TOnListDrawItem    = procedure(Control: IWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState) of object;
-  TOnAlign           = procedure (sender: IUnknown; Control: IControl; var NewLeft, NewTop, NewWidth, NewHeight: Integer; var AlignRect: TRect) of object;
+  TOnAlign           = procedure(Sender: IUnknown; Control: IControl; var NewLeft, NewTop, NewWidth, NewHeight: Integer; var AlignRect: TRect) of object;
+  TOnMouse           = procedure(Sender: IComponent; Button: TMouseButton; Shift: TShiftState; X, Y: Integer) of object;
+  TOnMouseMove       = procedure(Sender: IComponent; Shift: TShiftState; X, Y: Integer) of object;
 
   TCustomEventsCallback = class(TInterfacedObject, IEventsCallback)
   protected
-    FOnEventsCallback: TOnEventsCallback;
+    FOnEventsCallback: TGUINotifyEvent;
     procedure SetEvent(Control: IComponent); virtual; safecall;
   public
-    constructor Create(OnEventsCallback: TOnEventsCallback);
+    constructor Create(OnEventsCallback: TGUINotifyEvent);
   end;
 
-  TCustomWindowEvents = class(TInterfacedObject, IWindowEvents)
+  TCustomWindowEvents = class(TInterfacedObject, IWindowEvents, IGuiEvents)
   protected
+    FOnFreeComponent: TGUINotifyEvent;
     FOnClose: TOnClose;
     FOnPropertyChanged: TOnPropertyChanged;
+  protected
     procedure Activated(sender: IUnknown); virtual; safecall;
     procedure Closed(sender: IUnknown; var Action: TCloseAction); virtual; safecall;
     procedure CloseQuery(sender: IUnknown; var CanClose: BOOL); virtual; safecall;
@@ -41,13 +44,20 @@ type
     procedure Destroyed(sender: IUnknown); virtual; safecall;
     procedure Deactivated(sender: IUnknown); virtual; safecall;
     procedure PropertyChanged(sender: IUnknown; component: IComponent); virtual; safecall;
+  protected
+    procedure LanguageChanged(NewLangName: IString); virtual; safecall;
+    procedure SkinChanged(NewSkinName: IString); virtual; safecall;
+    procedure AntiBossChanged(const Activated: BOOL); virtual; safecall;
+    procedure FreeNotify(sender: IComponent); virtual; safecall;
   public
-    constructor Create(OnClose: TOnClose; OnPropertyChanged: TOnPropertyChanged);
+    constructor Create(OnFreeComponent: TGUINotifyEvent; OnClose: TOnClose; OnPropertyChanged: TOnPropertyChanged);
   end;
 
   TCustomClickEvent = class(TInterfacedObject, IMouseClickEvents)
   protected
     FOnClick: TGUINotifyEvent;
+    FOnUp   : TOnMouse;
+    FOnDown : TOnMouse;
 
     procedure Click(sender: IUnknown); virtual; safecall;
     procedure DblClick(sender: IUnknown); virtual; safecall;
@@ -55,7 +65,31 @@ type
     procedure MouseUp(sender: IUnknown; Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual; safecall;
     procedure UpDownClick(sender: IUnknown; Button: TUDBtnType); virtual; safecall;
   public
-    constructor Create(OnClick: TGUINotifyEvent);
+    constructor Create(OnClick: TGUINotifyEvent; OnUp: TOnMouse = nil; OnDown: TOnMouse = nil);
+  end;
+
+  TCustomMoveEvent = class(TInterfacedObject, IMouseMoveEvents)
+  protected
+    FOnMouseEnter: TGUINotifyEvent;
+    FOnMouseLeave: TGUINotifyEvent;
+    FOnMouseMove : TOnMouseMove;
+
+    procedure MouseMove(Sender: IUnknown; Shift: TShiftState; X, Y: Integer); virtual; safecall;
+    procedure MouseEnter(Sender: IUnknown); virtual; safecall;
+    procedure MouseLeave(Sender: IUnknown); virtual; safecall;
+  public
+    constructor Create(OnMouseMove: TOnMouseMove; OnMouseEnter, OnMouseLeave: TGUINotifyEvent);
+  end;
+
+  TMouseEvent = class(TInterfacedObject, IMouseClickEvents, IMouseMoveEvents)
+  protected
+    FEvClick : IMouseClickEvents;
+    FEvMove  : IMouseMoveEvents;
+  public
+    property EvClick : IMouseClickEvents read FEvClick implements IMouseClickEvents;
+    property EvMove  : IMouseMoveEvents  read FEvMove  implements IMouseMoveEvents;
+
+    constructor Create(AEvClick: IMouseClickEvents; AEvMove: IMouseMoveEvents);
   end;
 
   TCustomTreeViewEvent = class(TInterfacedObject, ITreeGetEvents, INodeControlEvents)
@@ -90,6 +124,29 @@ type
     constructor Create(OnGetText: TOnTreeGetText; OnGetHint: TOnTreeGetHint; OnInitNode: TOnInitNode; OnFreeNode: TOnFreeNode);
   end;
 
+  TCustomTreeViewPaintEvent = class(TInterfacedObject, ITreePaintEvents)
+  protected
+    procedure AdvancedHeaderDraw(Sender: ITreeHeader; var PaintInfo: THeaderPaintInfo; const Elements: THeaderPaintElements); virtual; safecall;
+    //after draw
+    procedure AfterCellPaint(Sender: IUnknown; TargetCanvas: ICanvas; Node: PVirtualNode; Column: TColumnIndex; CellRect: TRect); virtual; safecall;
+    procedure AfterItemErase(Sender: IUnknown; TargetCanvas: ICanvas; Node: PVirtualNode; ItemRect: TRect); virtual; safecall;
+    procedure AfterItemPaint(Sender: IUnknown; TargetCanvas: ICanvas; Node: PVirtualNode; ItemRect: TRect); virtual; safecall;
+    procedure AfterPaint(Sender: IUnknown; TargetCanvas: ICanvas); virtual; safecall;
+    //before draw
+    procedure BeforeCellPaint(Sender: IUnknown; TargetCanvas: ICanvas; Node: PVirtualNode; Column: TColumnIndex; CellRect: TRect); virtual; safecall;
+    procedure BeforeItemErase(Sender: IUnknown; TargetCanvas: ICanvas; Node: PVirtualNode; ItemRect: TRect;
+                              var ItemColor: TColor; var EraseAction: TItemEraseAction); virtual; safecall;
+    procedure BeforeItemPaint(Sender: IUnknown; TargetCanvas: ICanvas; Node: PVirtualNode; ItemRect: TRect; var CustomDraw: BOOL); virtual; safecall;
+    procedure BeforePaint(Sender: IUnknown; TargetCanvas: ICanvas); virtual; safecall;
+    //header drawing
+    procedure HeaderDraw(Sender: ITreeHeader; HeaderCanvas: ICanvas; Column: ITreeColumn;
+                         R: TRect; Hover, Pressed: BOOL; DropMark: TVTDropMarkMode); virtual; safecall;
+    procedure HeaderDrawQueryElements(Sender: ITreeHeader; var PaintInfo: THeaderPaintInfo; const Elements: THeaderPaintElements); virtual; safecall;
+    //tree painting
+    procedure PaintBackground(Sender: IUnknown; TargetCanvas: ICanvas; R: TRect; var Handled: BOOL); virtual; safecall;
+    procedure PaintText(Sender: IUnknown; TargetCanvas: ICanvas; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType); virtual; safecall;
+  end;
+  
   TCustomKeybEvent = class(TInterfacedObject, IKeyboardEvents)
   protected
     FOnDown : TOnKeyUpDown;
@@ -159,16 +216,16 @@ type
     property OnWnd  : IWindowEvents   read FWnd   implements IWindowEvents;
     property OnKeyb : IKeyboardEvents read FKeyb  implements IKeyboardEvents;
 
-    constructor Create(OnClose: TOnClose; OnKeyUp: TOnKeyUpDown; OnSized: TGUINotifyEvent; OnAlign: TOnAlign);
+    constructor Create(OnFreeComponent: TGUINotifyEvent; OnClose: TOnClose; OnKeyUp: TOnKeyUpDown; OnSized: TGUINotifyEvent; OnAlign: TOnAlign);
   end;
 
-  TTimerHandler = class(TInterfacedObject, ITimerEvents)
-  private
-    FOnTimer: TNotifyEvent;
+  TTimerEvents = class(TInterfacedObject, ITimerEvents)
   protected
-    procedure DidTimer(sender: IInterface); safecall;
+    FOnTimer: TGUINotifyEvent;
+    procedure DidTimer(sender: IInterface); virtual; safecall;
   public
-    property OnTimer: TNotifyEvent read FOnTimer write FOnTimer;
+    property OnTimer: TGUINotifyEvent read FOnTimer write FOnTimer;
+    constructor Create(AOnTimer: TGUINotifyEvent);
   end;
 
 //find component by Name and return it as IID interface
@@ -211,7 +268,7 @@ end;
 
 { TCustomEventsCallback }
 
-constructor TCustomEventsCallback.Create(OnEventsCallback: TOnEventsCallback);
+constructor TCustomEventsCallback.Create(OnEventsCallback: TGUINotifyEvent);
 begin
   inherited Create();
   FOnEventsCallback := OnEventsCallback;
@@ -231,9 +288,12 @@ begin
 end;
 
 procedure TCustomWindowEvents.Closed(sender: IInterface; var Action: TCloseAction);
+var
+  ctl: IComponent;
 begin
   if Assigned(FOnClose) then
-    FOnClose(sender, Action);
+    if Supports(sender, IComponent, ctl) then
+      FOnClose(ctl, Action);
 end;
 
 procedure TCustomWindowEvents.CloseQuery(sender: IInterface; var CanClose: BOOL);
@@ -241,9 +301,10 @@ begin
 
 end;
 
-constructor TCustomWindowEvents.Create(OnClose: TOnClose; OnPropertyChanged: TOnPropertyChanged);
+constructor TCustomWindowEvents.Create(OnFreeComponent: TGUINotifyEvent; OnClose: TOnClose; OnPropertyChanged: TOnPropertyChanged);
 begin
   inherited Create();
+  FOnFreeComponent   := OnFreeComponent;
   FOnClose           := OnClose;
   FOnPropertyChanged := OnPropertyChanged;
 end;
@@ -269,12 +330,35 @@ begin
     FOnPropertyChanged(sender, component);
 end;
 
+procedure TCustomWindowEvents.AntiBossChanged(const Activated: BOOL);
+begin
+
+end;
+
+procedure TCustomWindowEvents.LanguageChanged(NewLangName: IString);
+begin
+
+end;
+
+procedure TCustomWindowEvents.SkinChanged(NewSkinName: IString);
+begin
+
+end;
+
+procedure TCustomWindowEvents.FreeNotify(sender: IComponent);
+begin
+  if Assigned(FOnFreeComponent) then
+    FOnFreeComponent(sender);
+end;
+
 { TCustomClickEvent }
 
-constructor TCustomClickEvent.Create(OnClick: TGUINotifyEvent);
+constructor TCustomClickEvent.Create(OnClick: TGUINotifyEvent; OnUp: TOnMouse; OnDown: TOnMouse);
 begin
   inherited Create();
   FOnClick := OnClick;
+  FOnUp    := OnUp;
+  FOnDown  := OnDown;
 end;
 
 procedure TCustomClickEvent.Click(sender: IInterface);
@@ -293,14 +377,22 @@ end;
 
 procedure TCustomClickEvent.MouseDown(sender: IInterface;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  ctl: IComponent;
 begin
-
+  if Assigned(FOnDown) then
+    if Supports(sender, IComponent, ctl) then
+      FOnDown(ctl, Button, Shift, X, Y);
 end;
 
 procedure TCustomClickEvent.MouseUp(sender: IInterface;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  ctl: IComponent;
 begin
-
+  if Assigned(FOnUp) then
+    if Supports(sender, IComponent, ctl) then
+      FOnUp(ctl, Button, Shift, X, Y);
 end;
 
 procedure TCustomClickEvent.UpDownClick(sender: IInterface;
@@ -566,10 +658,10 @@ end;
 
 { TWindowEvents }
 
-constructor TWindowEvents.Create(OnClose: TOnClose; OnKeyUp: TOnKeyUpDown; OnSized: TGUINotifyEvent; OnAlign: TOnAlign);
+constructor TWindowEvents.Create(OnFreeComponent: TGUINotifyEvent; OnClose: TOnClose; OnKeyUp: TOnKeyUpDown; OnSized: TGUINotifyEvent; OnAlign: TOnAlign);
 begin
   inherited Create();
-  FWnd  := TCustomWindowEvents.Create(OnClose, nil);
+  FWnd  := TCustomWindowEvents.Create(OnFreeComponent, OnClose, nil);
   FKeyb := TCustomKeybEvent.Create(nil, OnKeyUp, nil);
   FOnSized := OnSized;
   FOnAlign := OnAlign;
@@ -605,14 +697,160 @@ end;
 
 { TTimerHandler }
 
-procedure TTimerHandler.DidTimer(sender: IInterface);
+constructor TTimerEvents.Create(AOnTimer: TGUINotifyEvent);
 begin
-  sender._AddRef;
+  inherited Create();
+  FOnTimer := AOnTimer;
+end;
+
+procedure TTimerEvents.DidTimer(sender: IInterface);
+var
+  RefHolder: IInterface;
+  ctl: IComponent;
+begin
+  RefHolder := sender; //_AddRef
   try
-    if Assigned(FOnTimer) then FOnTimer(Self);
+    if Assigned(FOnTimer) then
+      if Supports(Sender, IComponent, ctl) then
+        FOnTimer(ctl);
   finally
-    sender._Release;
+    RefHolder := nil; //_Release;
   end;
+end;
+
+{ TCustomMoveEvent }
+
+constructor TCustomMoveEvent.Create(OnMouseMove: TOnMouseMove; OnMouseEnter, OnMouseLeave: TGUINotifyEvent);
+begin
+  inherited Create();
+  FOnMouseMove  := OnMouseMove;
+  FOnMouseEnter := OnMouseEnter;
+  FOnMouseLeave := OnMouseLeave;
+end;
+
+procedure TCustomMoveEvent.MouseEnter(Sender: IInterface);
+var
+  ctl: IComponent;
+begin
+  if Assigned(FOnMouseEnter) then
+    if Supports(Sender, IComponent, ctl) then
+      FOnMouseEnter(ctl);
+end;
+
+procedure TCustomMoveEvent.MouseLeave(Sender: IInterface);
+var
+  ctl: IComponent;
+begin
+  if Assigned(FOnMouseLeave) then
+    if Supports(Sender, IComponent, ctl) then
+      FOnMouseLeave(ctl);
+end;
+
+procedure TCustomMoveEvent.MouseMove(Sender: IInterface; Shift: TShiftState; X, Y: Integer);
+var
+  ctl: IComponent;
+begin
+  if Assigned(FOnMouseMove) then
+    if Supports(Sender, IComponent, ctl) then
+      FOnMouseMove(ctl, Shift, X, Y);
+end;
+
+{ TMouseEvent }
+
+constructor TMouseEvent.Create(AEvClick: IMouseClickEvents; AEvMove: IMouseMoveEvents);
+begin
+  inherited Create();
+  FEvClick := AEvClick;
+  FEvMove  := AEvMove;
+  Assert(Assigned(AEvClick), 'AEvClick must be assigned');
+  Assert(Assigned(AEvMove), 'AEvMove must be assigned');
+end;
+
+{ TCustomTreeViewPaintEvent }
+
+procedure TCustomTreeViewPaintEvent.AdvancedHeaderDraw(Sender: ITreeHeader;
+  var PaintInfo: THeaderPaintInfo; const Elements: THeaderPaintElements);
+begin
+
+end;
+
+procedure TCustomTreeViewPaintEvent.AfterCellPaint(Sender: IInterface;
+  TargetCanvas: ICanvas; Node: PVirtualNode; Column: TColumnIndex;
+  CellRect: TRect);
+begin
+
+end;
+
+procedure TCustomTreeViewPaintEvent.AfterItemErase(Sender: IInterface;
+  TargetCanvas: ICanvas; Node: PVirtualNode; ItemRect: TRect);
+begin
+
+end;
+
+procedure TCustomTreeViewPaintEvent.AfterItemPaint(Sender: IInterface;
+  TargetCanvas: ICanvas; Node: PVirtualNode; ItemRect: TRect);
+begin
+
+end;
+
+procedure TCustomTreeViewPaintEvent.AfterPaint(Sender: IInterface;
+  TargetCanvas: ICanvas);
+begin
+
+end;
+
+procedure TCustomTreeViewPaintEvent.BeforeCellPaint(Sender: IInterface;
+  TargetCanvas: ICanvas; Node: PVirtualNode; Column: TColumnIndex;
+  CellRect: TRect);
+begin
+
+end;
+
+procedure TCustomTreeViewPaintEvent.BeforeItemErase(Sender: IInterface;
+  TargetCanvas: ICanvas; Node: PVirtualNode; ItemRect: TRect;
+  var ItemColor: TColor; var EraseAction: TItemEraseAction);
+begin
+
+end;
+
+procedure TCustomTreeViewPaintEvent.BeforeItemPaint(Sender: IInterface;
+  TargetCanvas: ICanvas; Node: PVirtualNode; ItemRect: TRect;
+  var CustomDraw: BOOL);
+begin
+
+end;
+
+procedure TCustomTreeViewPaintEvent.BeforePaint(Sender: IInterface;
+  TargetCanvas: ICanvas);
+begin
+
+end;
+
+procedure TCustomTreeViewPaintEvent.HeaderDraw(Sender: ITreeHeader;
+  HeaderCanvas: ICanvas; Column: ITreeColumn; R: TRect; Hover,
+  Pressed: BOOL; DropMark: TVTDropMarkMode);
+begin
+
+end;
+
+procedure TCustomTreeViewPaintEvent.HeaderDrawQueryElements(
+  Sender: ITreeHeader; var PaintInfo: THeaderPaintInfo;
+  const Elements: THeaderPaintElements);
+begin
+
+end;
+
+procedure TCustomTreeViewPaintEvent.PaintBackground(Sender: IInterface;
+  TargetCanvas: ICanvas; R: TRect; var Handled: BOOL);
+begin
+
+end;
+
+procedure TCustomTreeViewPaintEvent.PaintText(Sender: IInterface;
+  TargetCanvas: ICanvas; Node: PVirtualNode; Column: TColumnIndex;
+  TextType: TVSTTextType);
+begin
+
 end;
 
 end.

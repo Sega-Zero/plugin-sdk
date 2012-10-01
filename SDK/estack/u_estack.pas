@@ -1,10 +1,18 @@
 // для использования - модуль следует подключать последним в списке
+
+// добавлен модуль u_hook_HandleAutoException, решающий проблему с аппаратными исключениями
+// добавлен модуль u_hook_SafeCallException, добавляющий реализацию в TObject.SafeCallException
+//    что позволяет всем наследникам TObject иметь обработку SafeCall исключений
+
 // чтобы safecall исключения нормально пробрасывались в ядро
 // нужно наследоваться от TQIPInterfacedObject или перекрывать
 // TObject.SafeCallException в котором вызывать u_estack.SafeCallExceptionProc
+// либо использовать модуль u_hook_SafeCallException (по умолчанию вкл)
 
 // возможны проблемы при передаче аппаратных исключений в ядро
 // это баг, как бороться см. тут: http://qc.embarcadero.com/wc/qcmain.aspx?d=81725
+// либо использовать модуль u_hook_HandleAutoException (по умолчанию вкл)
+
 
 unit u_estack;
 
@@ -14,6 +22,8 @@ uses Windows, SysUtils{$IFNDEF DISABLE_HOOKS}, u_hook_HandleAutoException, u_hoo
 
 const
   ESTACK_MAPNAME = 'QIP_IEStack';
+  ESTACK_SECTION_STR = 'QIP SafeCall stacktrace:';
+  ESTACK_SECTION = #13#10 + ESTACK_SECTION_STR + #13#10;
   E_QIPEXCEPTION = HResult($80044444);
 
 type
@@ -118,14 +128,16 @@ type
 
   TExceptionToQIPException = function (EObject: TObject; EAddr: Pointer): TQIPException;
 
+procedure QIPSafeCallErrorProc(ErrorCode: HResult; ErrorAddr: Pointer);  
 function SafeCallExceptionProc(ExceptObject: TObject; ExceptAddr: Pointer): HResult;
 function GetEStack: IEStack;
 
 var ExceptionToQIPException: TExceptionToQIPException;
+    {$IFDEF madExcept}madStackLimit: Integer;{$ENDIF}
 
 implementation
 
-uses u_exceptions;
+uses StrUtils, u_exceptions{$IFDEF madExcept}, madExcept, Classes{$ENDIF};
 
 var prevSafeCallErrorProc: TSafeCallErrorProc;
     eStack: IEStack;
@@ -148,12 +160,61 @@ begin
 end;
 
 function SafeCallExceptionProc(ExceptObject: TObject; ExceptAddr: Pointer): HResult;
+const SIDE_NAME = {$IFDEF INFIUM}'>> core side'{$ELSE}'>> module side'{$ENDIF};
 var stack: IEStack;
+{$IFDEF madExcept}
+    e: Exception;
+    s: string;
+    i, n: Integer;
+{$ENDIF}
 begin
   stack := GetEStack;
   if assigned(stack) then
   begin
     Result := E_QIPEXCEPTION;
+
+    //добавляем информацию о стеке в текст сообщения
+    {$IFDEF madExcept}
+    if ExceptObject is Exception then
+    begin
+      e := Exception(ExceptObject);
+      if Pos(ESTACK_SECTION, e.Message) = 0 then e.Message := e.Message + ESTACK_SECTION;
+      if Pos(SIDE_NAME, e.Message) = 0 then
+      begin
+        e.Message := e.Message + SIDE_NAME + sLineBreak;
+        s := GetCrashStackTrace;
+
+        n := Pos('SafeCallExceptionProc', s);
+        if n > 0 then
+        begin
+          Inc(n, Length('SafeCallExceptionProc'));
+          n := PosEx(sLineBreak, s, n);
+          if n > 0 then
+            Delete(s, 1, n - 1 + Length(sLineBreak));
+        end;
+
+        n := Pos('@CheckAutoResult', s);
+        if n > 0 then
+        begin
+          Inc(n, Length('@CheckAutoResult'));
+          n := PosEx(sLineBreak, s, n);
+          if n > 0 then
+            Delete(s, 1, n - 1 + Length(sLineBreak));
+        end;
+
+        n := 0;
+        for i := 0 to madStackLimit - 1 do
+          begin
+            n := PosEx(sLineBreak, s, n + Length(sLineBreak));
+            if n = 0 then Break;
+          end;
+        if n > 0 then s := Copy(s, 1, n - 1);
+
+        e.Message := e.Message + s + sLineBreak;
+      end;  
+    end;
+    {$ENDIF}
+
     if assigned(ExceptionToQIPException) then
       stack.Push(ExceptionToQIPException(ExceptObject, ExceptAddr))
     else
@@ -387,10 +448,12 @@ end;
 
 initialization
 
+{$IFDEF madExcept}madStackLimit := 10;{$ENDIF}
+
 ExceptionToQIPException := nil;
 eStack := nil;
 prevSafeCallErrorProc := SafeCallErrorProc;
-SafeCallErrorProc := QIPSafeCallErrorProc;
+SafeCallErrorProc := @QIPSafeCallErrorProc;
 
 finalization
 
