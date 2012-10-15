@@ -68,7 +68,7 @@ type
   IPaintEvents = interface
   ['{82B1CCF9-289D-44C3-80A3-1452BBE66CA9}']
     procedure Paint(sender: IUnknown); safecall;
-    procedure ToolBarCustomDraw(sender: IToolBar; const ARect: TRect; var DefaultDraw: BOOL); safecall;
+    procedure ToolBarCustomDraw(sender: IToolBar; ARect: TRect; var DefaultDraw: BOOL); safecall;
     procedure ToolBarCustomDrawButton(sender: IToolBar; Button: IToolButton; State: TCustomDrawState; var DefaultDraw: BOOL); safecall;
     procedure ListDrawItem(Control: IWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL); safecall;
     procedure MenuItemDrawItem(sender: IUnknown; ACanvas: ICanvas; ARect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL); safecall;

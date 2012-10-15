@@ -1440,6 +1440,23 @@ const
   TW_FRAMEBOTTOMSIZINGTEMPLATE      = 103;
   TW_SMALLFRAMEBOTTOMSIZINGTEMPLATE = 104;
 
+  {TTextHintOption}
+  HO_USELANGID           = 0;
+  HO_LEFTALIGN           = 1;
+  HO_REVERSEALIGNONFOCUS = 2;
+  HO_FOCUSED             = 3;
+  HO_NOTFOCUSED          = 4;
+  HO_EMPTY               = 5;
+  HO_NOTEMPTY            = 6;
+  {TTextHintOptions}
+  HO_FLAG_USELANGID           = $1;
+  HO_FLAG_LEFTALIGN           = $2;
+  HO_FLAG_REVERSEALIGNONFOCUS = $4;
+  HO_FLAG_FOCUSED             = $8;
+  HO_FLAG_NOTFOCUSED          = $10;
+  HO_FLAG_EMPTY               = $20;
+  HO_FLAG_NOTEMPTY            = $40;
+
   {TDropMode}
   DM_Nowhere  = 0;
   DM_Above    = 1;
@@ -2695,6 +2712,16 @@ type
     Part,
     State: Integer;
   end;
+
+  TTextHintOption = (hoUseLangID           = HO_USELANGID,
+                     hoLeftAlign           = HO_LEFTALIGN,
+                     hoReverseAlignOnFocus = HO_REVERSEALIGNONFOCUS,
+                     hoFocused             = HO_FOCUSED,
+                     hoNotFocused          = HO_NOTFOCUSED,
+                     hoEmpty               = HO_EMPTY,
+                     hoNotEmpty            = HO_NOTEMPTY,
+                     hoReserved1           = FLAG_RESERVED);
+  TTextHintOptions = set of TTextHintOption;  
 
   TBalloonHintTimeOut = 10..60;   // Windows defines 10-60 secs. as min-max
 

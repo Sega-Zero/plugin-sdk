@@ -69,6 +69,9 @@ type
     FSettingsWnd: TSettings;
     FSyncObj: TMainThreadSyncWnd;
 
+    FHintTimer: ITimer;
+    FHintWID: WideString;
+
     procedure CreateMenu;
     procedure FreeMenu;
     function  CreateMenuItem: IMenuItem;
@@ -77,6 +80,9 @@ type
     procedure MenuItemClick(Sender: IComponent);
     procedure DoFreeSettings(Sender: TObject);
     procedure FreeSettings(Sender: TObject);
+    procedure StartHintTimer(ID: WideString);
+    procedure StopHintTimer(ID: WideString);
+    procedure OnHintTimer(Sender: IComponent);
   public
     constructor Create(const PluginService: IQIPPluginService);
     destructor Destroy; override;
@@ -160,6 +166,8 @@ end;
 
 destructor TQipPlugin.Destroy;
 begin
+  FHintTimer := nil;
+  FHintWID   := '';
   FreeMenu;
   Widgets_Clear;
   FCLWidget := nil;
@@ -173,6 +181,8 @@ end;
 
 procedure TQipPlugin.FinalPlugin;
 begin
+  FHintTimer := nil;
+  FHintWID   := '';
   DoFreeSettings(Self);
   inherited;
 end;
@@ -180,6 +190,32 @@ end;
 procedure TQipPlugin.FreeMenu;
 begin
   FSettingsMenu := nil;
+end;
+
+procedure TQipPlugin.StartHintTimer(ID: WideString);
+begin
+  StopHintTimer(FHintWID);
+  FHintWID := ID;
+  FHintTimer.Enabled := True;
+end;
+
+procedure TQipPlugin.StopHintTimer(ID: WideString);
+begin
+  if FHintWID = ID then
+    FHintTimer.Enabled := False;
+end;
+
+procedure TQipPlugin.OnHintTimer(Sender: IComponent);
+var
+  widget: IWidget;
+begin
+  FHintTimer.Enabled := False;
+
+  widget := Widgets_GetHotItem;
+  if widget = nil then Exit;
+  if widget.ID.wString <> FHintWID then Exit;
+
+  Widgets_ShowHint();
 end;
 
 procedure TQipPlugin.DoFreeSettings(Sender: TObject);
@@ -214,8 +250,10 @@ begin
   if CoreUtils = nil then Exit;
   CreateMenu;
   //you can create your widget wrappers right in InitPlugin, or any time after first InitPlugin call
-  FCLWidget := TSampleWidget.Create(Self, wgcCL, True);
-  FMWWidget := TSampleWidget.Create(Self, wgcMsg, True);
+  FCLWidget  := TSampleWidget.Create(Self, wgcCL, True);
+  FMWWidget  := TSampleWidget.Create(Self, wgcMsg, True);
+  FHintTimer := CreateTimer(500, False, OnHintTimer);
+  FHintWID   := '';
 end;
 
 procedure TQipPlugin.LoadOptions;
@@ -522,12 +560,13 @@ procedure TSampleWidget.MouseEnter;
 begin
   inherited;
   FOwner.Widgets_Invalidate(ID);
-  FOwner.Widgets_ShowHint; 
+  (FOwner as TQipPlugin).StartHintTimer(ID.wString);
 end;
 
 procedure TSampleWidget.MouseLeave;
 begin
   inherited;
+  (FOwner as TQipPlugin).StopHintTimer(ID.wString);
   FOwner.Widgets_Invalidate(ID);
 end;
 

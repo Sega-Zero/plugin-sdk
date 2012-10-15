@@ -3,7 +3,7 @@ unit u_public_intf;
 interface
 
 uses
-  Windows, Types, u_string, u_estack, u_gui_intf, u_gui_const;
+  Windows, Types, u_string, u_estack, u_gui_intf, u_gui_const, ActiveX;
 
 const
   PRX_TYPE_NONE     = 0;
@@ -32,7 +32,8 @@ type
   pConnectSet = ^TConnectSet;
 
   TRequestMethod  = (rmUnknown, rmGet, rmPost, rmDelete, rmHead);
-  THttpAuthType    = (httpAuthNone, httpAuthBasic, httpAuthNtlm);
+  THttpAuthType   = (httpAuthNone, httpAuthBasic, httpAuthNtlm);
+  TTimeoutType    = (toIdle, toConnect, toKeepAlive);
 
 type
 
@@ -61,6 +62,9 @@ type
 
     function  StrMD5(const Buffer : WideString): WideString; safecall;
     function  GetMD5(Buffer: Pointer; BufSize: Integer): WideString; safecall;
+
+    function  HMAC_SHA1(const Base, Key: WideString): WideString; overload; safecall;
+    function  HMAC_SHA1(BaseBuf: Pointer; BaseSize: Integer; KeyBuf: Pointer; KeySize: Integer): WideString; overload; safecall;
   end;
   pIQIPNetwork = ^IQIPNetwork;
 
@@ -87,7 +91,7 @@ type
   IQipHttpRequest = interface
   ['{CA0CCF60-A091-4F82-B7EF-F57D42303FE8}']
     procedure Cancel; safecall;
-    procedure SetTimeout(ConnTimeout, IdleTimeout: Integer); safecall;
+    procedure SetTimeout(ConnTimeout, IdleTimeout: Integer); overload; safecall;
 
     procedure AddHeader(Value: PWideChar); safecall;
     procedure AddReferer(Req: IQipHttpRequest); safecall;
@@ -105,9 +109,12 @@ type
     function  GetUserAgent: WideString; safecall;
     procedure SetUserAgent(Agent: PWideChar); safecall;
 
-    function IsSecured: Boolean; safecall;
+    function  IsSecured: Boolean; safecall;
     procedure SetServerAuth(AuthType: THttpAuthType; UserName, UserPass: WideString); safecall;
-    function Location: WideString; safecall;
+    function  Location: WideString; safecall;
+
+    function  GetTimeout(ValueType: TTimeoutType): Integer; safecall;
+    procedure SetTimeout(ValueType: TTimeoutType; Value: Integer); overload; safecall;
   end;
 
   IQipHttpHandler = interface
@@ -115,6 +122,15 @@ type
     procedure OnHttpDone(Req: IQipHttpRequest; StatusCode: Integer; Data: Pointer; Size: Int64); safecall;
     procedure OnHttpError(Req: IQipHttpRequest; ErrCode: Integer; Msg: WideString); safecall;
     procedure OnHttpHead(Req: IQipHttpRequest; StatusCode: Integer; Data: Pointer; Size: Int64); safecall;
+  end;
+
+  IQipHttpSendRcvHandler = interface(IQipHttpHandler)
+  ['{F5050E06-EC76-4FA3-9135-E16FD39BB346}']
+    procedure OnHttpSending(Req: IQipHttpRequest; Data: Pointer; Size: Int64; TotalSent: Int64); safecall;
+    procedure OnHttpReceiving(Req: IQipHttpRequest; Data: Pointer; Size: Int64; TotalReceived: Int64); safecall;
+    function  GetSendStream(Req: IQipHttpRequest): IStream; safecall;
+    function  GetRcvStream(Req: IQipHttpRequest): IStream; safecall;
+    procedure OnHttpBeforeSendHeaders(Req: IQipHttpRequest; Method: IString; Headers: IStringList; var Changed: Boolean); safecall;
   end;
 
 //******* QIP GRAPHICS *******//

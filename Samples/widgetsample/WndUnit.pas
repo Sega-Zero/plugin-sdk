@@ -502,12 +502,10 @@ begin
 
   if Sender.Name.wString = 'edTest' then
   begin
-    edTest                        := Sender as IEdit;
-    edTest.Events                 := TCustomChangeEvent.Create(edTestChanged);
-    edTest.TextHint               := GetIString('inplace hint');
-    edTest.HintAlignLeft          := True;
-    edTest.ClearHintOnPaste       := True;
-    edTest.KeepTextHintAfterFocus := False;
+    edTest                 := Sender as IEdit;
+    edTest.Events          := TCustomChangeEvent.Create(edTestChanged);
+    edTest.TextHint        := GetIString('inplace hint');
+    edTest.TextHintOptions := edTest.TextHintOptions + [hoLeftAlign];
   end;
 end;
 
@@ -585,10 +583,7 @@ end;
 
 procedure TSettings.edTestChanged(Sender: IComponent);
 begin
-  if edTest.Text.wString = '' then
-    edTest.TextHint := GetIString('inplace hint')
-  else
-    edTest.TextHint := GetIString('');
+  {do something}
 end;
 
 procedure TSettings.DoFree;

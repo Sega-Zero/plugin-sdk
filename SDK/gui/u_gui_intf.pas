@@ -49,6 +49,10 @@ type
     procedure SetEvent(Control: IComponent); safecall;
   end;
 
+  ISyncCallback = interface
+    procedure SyncProc(var data); safecall;
+  end;
+
   IQIPCoreGUI = interface
   ['{3A3345AE-E21A-4ACA-89B1-4E8434D9B947}']
     //creates group of controls. EventList should return an Event Handler for each control that specified in Description parameter
@@ -57,6 +61,7 @@ type
     //this may be used to create a single control of specified type with default property values without string description
     procedure CreateControl(Owner: IComponent; iid: TGUID; out Component; EventHandler: IInterface); safecall;
     procedure CreateObject(iid: TGUID; out Obj; EventHandler: IInterface); safecall;
+    procedure DoSync(intf: ISyncCallback; var data); safecall;
   end;
 
   IObject = interface
@@ -857,9 +862,6 @@ type
     function GetCharCase: TEditCharCase; safecall;
     function GetHideSelection: BOOL; safecall;
     function GetHint: IString; safecall;
-    function GetHintAlign: BOOL; safecall;
-    function GetKeepHintAfterFocus: BOOL; safecall;
-    function GetLangTextHint: BOOL; safecall;
     function GetMaxLength: Integer; safecall;
     function GetModified: BOOL; safecall;
     function GetOEMConvert: BOOL; safecall;
@@ -870,15 +872,13 @@ type
     function GetSelText: IString; safecall;
     function GetText: IString; safecall;
     function GetTextHint: IString; safecall;
+    function GetTextHintOptions: TTextHintOptions; safecall;
     procedure SetAutoSelect(Value: BOOL); safecall;
     procedure SetAutoSize(Value: BOOL); safecall;
     procedure SetBorderStyle(Value: TBorderStyle); safecall;
     procedure SetCharCase(Value: TEditCharCase); safecall;
     procedure SetHideSelection(Value: BOOL); safecall;
     procedure SetHint(Value: IString); safecall;
-    procedure SetHintAlign(Value: BOOL); safecall;
-    procedure SetKeepHintAfterFocus(Value: BOOL); safecall;
-    procedure SetLangHint(Value: BOOL); safecall;
     procedure SetMaxLength(Value: Integer); safecall;
     procedure SetModified(Value: BOOL); safecall;
     procedure SetOEMConvert(Value: BOOL); safecall;
@@ -889,8 +889,7 @@ type
     procedure SetSelText(Value: IString); safecall;
     procedure SetText(Value: IString); safecall;
     procedure SetTextHint(Value: IString); safecall;
-    function GetClearPaste: BOOL; safecall;
-    procedure SetClearPaste(Value: BOOL); safecall;
+    procedure SetTextHintOptions(Value: TTextHintOptions); safecall;
 
     property AutoSelect: BOOL read GetAutoSelect write SetAutoSelect;
     property AutoSize: BOOL read GetAutoSize write SetAutoSize;
@@ -899,9 +898,6 @@ type
     property CharCase: TEditCharCase read GetCharCase write SetCharCase;
     property HideSelection: BOOL read GetHideSelection write SetHideSelection;
     property Hint: IString read GetHint write SetHint;
-    property HintAlignLeft: BOOL read GetHintAlign write SetHintAlign;
-    property KeepTextHintAfterFocus: BOOL read GetKeepHintAfterFocus write SetKeepHintAfterFocus;
-    property LangTextHint: BOOL read GetLangTextHint write SetLangHint;
     property MaxLength: Integer read GetMaxLength write SetMaxLength;
     property Modified: BOOL read GetModified write SetModified;
     property OEMConvert: BOOL read GetOEMConvert write SetOEMConvert;
@@ -912,7 +908,7 @@ type
     property SelText: IString read GetSelText write SetSelText;
     property Text: IString read GetText write SetText;
     property TextHint: IString read GetTextHint write SetTextHint;
-    property ClearHintOnPaste: BOOL read GetClearPaste write SetClearPaste;
+    property TextHintOptions: TTextHintOptions read GetTextHintOptions write SetTextHintOptions;
 
   end;
   
@@ -2135,7 +2131,7 @@ type
     procedure DrawEdge(DC: HDC; Details: TThemedElementDetails; R: TRect; Edge: Cardinal; Flags: Cardinal; ContentRect: PRect); safecall;
     procedure DrawElement(DC: HDC; Details: TThemedElementDetails; R: TRect; ClipRect: PRect = nil); safecall;
     procedure DrawParentBackground(Window: HWND; Target: HDC; Details: PThemedElementDetails; OnlyIfTransparent: Boolean; Bounds: PRect); safecall;
-    procedure DrawText(DC: HDC; Details: TThemedElementDetails; S: WideString; R: TRect; Flags: Cardinal; Flags2: Cardinal); safecall;
+    procedure DrawText(DC: HDC; Details: TThemedElementDetails; S: IString; R: TRect; Flags: Cardinal; Flags2: Cardinal); safecall;
     function GetElementDetails(Detail: TThemedButton): TThemedElementDetails; overload; safecall;
     function GetElementDetails(Detail: TThemedClock): TThemedElementDetails; overload; safecall;
     function GetElementDetails(Detail: TThemedComboBox): TThemedElementDetails; overload; safecall;
