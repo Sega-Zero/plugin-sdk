@@ -181,8 +181,7 @@ type
     FOnListDrawItem: TOnListDrawItem;
 
     procedure Paint(sender: IUnknown); virtual; safecall;
-    procedure ToolBarAdnvancedCustomDraw(sender: IToolBar; const ARect: TRect; Stage: TCustomDrawStage; var DefaultDraw: BOOL); virtual; safecall;
-    procedure ToolBarCustomDraw(sender: IToolBar; ARect: TRect; var DefaultDraw: BOOL); safecall;
+    procedure ToolBarCustomDraw(sender: IToolBar; ARect: TRect; var DefaultDraw: BOOL); virtual; safecall;
     procedure ToolBarCustomDrawButton(sender: IToolBar; Button: IToolButton; State: TCustomDrawState; var DefaultDraw: BOOL); virtual; safecall;
     procedure ListDrawItem(Control: IWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL); virtual; safecall;
     procedure MenuItemDrawItem(sender: IUnknown; ACanvas: ICanvas; ARect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL); virtual; safecall;
@@ -621,12 +620,6 @@ end;
 
 procedure TCustomPaintEvent.MenuItemDrawItem(sender: IInterface;
   ACanvas: ICanvas; ARect: TRect; State: TOwnerDrawState; var DefaultDraw: BOOL);
-begin
-
-end;
-
-procedure TCustomPaintEvent.ToolBarAdnvancedCustomDraw(sender: IToolBar;
-  const ARect: TRect; Stage: TCustomDrawStage; var DefaultDraw: BOOL);
 begin
 
 end;

@@ -1468,6 +1468,13 @@ const
   DS_DragLeave = 1;
   DS_DragMove  = 2;
 
+  {TProgressState}
+  TBPS_NOPROGRESS    = 0;
+  TBPS_IDENTERMINATE = 1;
+  TBPS_NORMAL        = 2;
+  TBPS_ERROR         = 3;
+  TBPS_PAUSED        = 4;
+
   FLAG_RESERVED = 31;
   FLAG_RESERVED64 = 63;
 
@@ -2748,6 +2755,11 @@ type
     dmOnNode  = DM_OnNode,
     dmBelow   = DM_Below);
 
+  TProgressState = (tbpsNoProgress    = TBPS_NOPROGRESS,
+                    tbpsIdenterminate = TBPS_IDENTERMINATE,
+                    tbpsNormal        = TBPS_NORMAL,
+                    tbpsError         = TBPS_ERROR,
+                    tbpsPaused        = TBPS_PAUSED);
 
   ////////////////////////////////////////
   //dialogs

@@ -2160,6 +2160,8 @@ const
   LI_NF_CLEAR         = 1984;
   LI_NF_ALLOWCLOSE    = 1985;
 
+  LI_LISTENING_RADIO  = 1986;
+  
 implementation
 
 end.

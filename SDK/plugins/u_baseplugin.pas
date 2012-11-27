@@ -204,7 +204,7 @@ type
 
     (* options routines *)
     procedure LoadOptions; virtual;
-    procedure SaveOptions; virtual;
+    procedure SaveOptions; virtual; //obsolete, use property Options := Value
     //procedure to be called when user clicks Settings button
     procedure OnOptions; virtual;
 
@@ -549,6 +549,7 @@ type
     constructor Create(AOwner: TCustomBaseQipPlugin; AClass: TWidgetClass; AllowCompact: Boolean);
     destructor Destroy(); override;
 
+    function ClientBounds(): TRect;
     function Bounds(): TRect;
     function IsHot(): Boolean;
     property Owner: TCustomBaseQipPlugin read FOwner;
@@ -575,6 +576,7 @@ type
   end;
 
 function QipPath: WideString;
+procedure SetThreadName(szThreadName: AnsiString; threadId: dword = DWORD(-1));
 
 {$IFDEF NOFORMS}
 var
@@ -3937,6 +3939,29 @@ begin
   end;
 end;
 
+function TWidgetItem.ClientBounds: TRect;
+var
+  p: TPoint;
+  r, gr: TRect;
+  w: IWidget;
+begin
+  Result := Rect(0,0,0,0);
+  r      := Rect(0,0,0,0);
+  gr     := Rect(0,0,0,0);
+  if GetCursorPos(p) then
+  begin
+    w := Self;
+    if (FOwner <> nil) and (Owner.SendPluginMessage(PM_PLUGIN_WIDGET_GETBOUNDS, Integer(w), Integer(@r), Integer(@gr)) <> 0) then
+    begin
+      Result := r;
+      if IsCompact then
+        OffsetRect(Result, -gr.Left, -gr.Top)
+      else
+        OffsetRect(Result, -Result.Left, -Result.Top)
+    end;
+  end;
+end;
+
 function TWidgetItem.GetPluginHandle: Integer;
 begin
   Result := 0;
@@ -3994,6 +4019,29 @@ end;
 procedure TMainThreadSyncWnd.WndProc(var Msg: TMessage);
 begin
   Dispatch(Msg);
+end;
+
+procedure SetThreadName(szThreadName: AnsiString; threadId: dword);
+type
+  tagTHREADNAME_INFO = record
+    dwType     : DWORD;  // must be 0x1000
+    szName     : LPCSTR; // pointer to name (in user addr space)
+    dwThreadID : DWORD;  // thread ID (-1=caller thread)
+    dwFlags    : DWORD;  // reserved for future use, must be zero
+  end;
+var
+  info: tagTHREADNAME_INFO;
+begin
+  if szThreadName <> '' then
+  begin
+    info.dwType     := $1000;
+    info.szName     := PAnsiChar(szThreadName);
+    info.dwThreadID := threadId;
+    info.dwFlags    := 0;
+    try
+      RaiseException($406D1388, 0, sizeof(info) div sizeof(DWORD), @info);
+    except end;
+  end;
 end;
 
 {$IFNDEF NOFORMS}

@@ -31,7 +31,7 @@ type
   end;
   pConnectSet = ^TConnectSet;
 
-  TRequestMethod  = (rmUnknown, rmGet, rmPost, rmDelete, rmHead);
+  TRequestMethod  = (rmUnknown, rmGet, rmPost, rmDelete, rmHead, rmPut);
   THttpAuthType   = (httpAuthNone, httpAuthBasic, httpAuthNtlm);
   TTimeoutType    = (toIdle, toConnect, toKeepAlive);
 

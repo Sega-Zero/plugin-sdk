@@ -100,9 +100,9 @@ begin
 
   {from Classes}
   if AClassName = 'EStreamError' then raise EStreamError.Create(AMsg);
-  if AClassName = 'EFileStreamError' then raise Exception(EFileStreamError).Create(AMsg);
-  if AClassName = 'EFCreateError' then raise Exception(EFCreateError).Create(AMsg);
-  if AClassName = 'EFOpenError' then raise Exception(EFOpenError).Create(AMsg);
+  if AClassName = 'EFileStreamError' then raise EFileStreamError.Create(AMsg);
+  if AClassName = 'EFCreateError' then raise EFCreateError.Create(AMsg);
+  if AClassName = 'EFOpenError' then raise EFOpenError.Create(AMsg);
   if AClassName = 'EFilerError' then raise EFilerError.Create(AMsg);
   if AClassName = 'EReadError' then raise EReadError.Create(AMsg);
   if AClassName = 'EWriteError' then raise EWriteError.Create(AMsg);

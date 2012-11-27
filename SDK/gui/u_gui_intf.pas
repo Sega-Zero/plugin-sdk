@@ -28,6 +28,7 @@ type
   IVTColors = interface;
   IPageList = interface;
   IToolBar = interface;
+  ITaskBar = interface;
 
   THeaderPaintInfo = record
     TargetCanvas: ICanvas;
@@ -248,6 +249,7 @@ type
     function GetScreenSnap: BOOL; safecall;
     function GetShowOnTaskbar: BOOL; safecall;
     function GetSnapBuffer: Integer; safecall;
+    function GetTaskBar: ITaskBar; safecall;
     function GetTransparentColor: BOOL; safecall;
     function GetTransparentColorValue: TColor; safecall;
     function GetWindowState: TWindowState; safecall;
@@ -295,6 +297,7 @@ type
     property ScreenSnap: BOOL read GetScreenSnap write SetScreenSnap;
     property ShowOnTaskbar: BOOL read GetShowOnTaskbar write SetShowOnTaskbar;
     property SnapBuffer: Integer read GetSnapBuffer write SetSnapBuffer;
+    property TaskBar: ITaskBar read GetTaskBar ;
     property TransparentColor: BOOL read GetTransparentColor write SetTransparentColor;
     property TransparentColorValue: TColor read GetTransparentColorValue write SetTransparentColorValue;
     property WindowState: TWindowState read GetWindowState write SetWindowState;
@@ -1276,7 +1279,8 @@ type
   end;
   
   IGroupBox = interface (IWinControl)
-  ['{D30F6560-D9E8-4546-8A71-1C2AEAA80A1D}']    function GetCaption: IString; safecall;
+  ['{D30F6560-D9E8-4546-8A71-1C2AEAA80A1D}']
+    function GetCaption: IString; safecall;
     function GetHint: IString; safecall;
     procedure SetCaption(Value: IString); safecall;
     procedure SetHint(Value: IString); safecall;
@@ -1419,6 +1423,7 @@ type
     function GetBevelWidth: TBevelWidth; safecall;
     function GetBorderStyle: TBorderStyle; safecall;
     function GetBorderWidth: TBorderWidth; safecall;
+    function GetCanvas: ICanvas; safecall;
     function GetCaption: IString; safecall;
     function GetErase: BOOL; safecall;
     function GetFlatBorder: BOOL; safecall;
@@ -1450,6 +1455,7 @@ type
     property BevelWidth: TBevelWidth read GetBevelWidth write SetBevelWidth;
     property BorderStyle: TBorderStyle read GetBorderStyle write SetBorderStyle;
     property BorderWidth: TBorderWidth read GetBorderWidth write SetBorderWidth;
+    property Canvas: ICanvas read GetCanvas ;
     property Caption: IString read GetCaption write SetCaption;
     property EraseBackground: BOOL read GetErase write SetErase;
     property FlatBorder: BOOL read GetFlatBorder write SetFlatBorder;
@@ -2164,6 +2170,63 @@ type
     property Theme[Element: TThemedElement]: HTHEME read GetTheme ;
     property ThemesAvailable: BOOL read GetThemesAvailable ;
     property ThemesEnabled: BOOL read GetThemesEnabled ;
+
+  end;
+  
+  ITaskBarButton = interface (IObject)
+  ['{9625DCC8-5835-4DB3-87F8-ABA2EA27152C}']
+    procedure Click; safecall;
+    function GetDismissOnClick: BOOL; safecall;
+    function GetEnabled: BOOL; safecall;
+    function GetID: Cardinal; safecall;
+    function GetIcon: IString; safecall;
+    function GetNoBackground: BOOL; safecall;
+    function GetNoInteractive: BOOL; safecall;
+    function GetToolTip: IString; safecall;
+    function GetVisible: BOOL; safecall;
+    procedure SetDismissOnClick(Value: BOOL); safecall;
+    procedure SetEnabled(Value: BOOL); safecall;
+    procedure SetIcon(Value: IString); safecall;
+    procedure SetNoBackground(Value: BOOL); safecall;
+    procedure SetNoInteractive(Value: BOOL); safecall;
+    procedure SetToolTip(Value: IString); safecall;
+    procedure SetVisible(Value: BOOL); safecall;
+
+    property DismissOnClick: BOOL read GetDismissOnClick write SetDismissOnClick;
+    property Enabled: BOOL read GetEnabled write SetEnabled;
+    property ID: Cardinal read GetID ;
+    property Icon: IString read GetIcon write SetIcon;
+    property NoBackground: BOOL read GetNoBackground write SetNoBackground;
+    property NoInteractive: BOOL read GetNoInteractive write SetNoInteractive;
+    property ToolTip: IString read GetToolTip write SetToolTip;
+    property Visible: BOOL read GetVisible write SetVisible;
+
+  end;
+  
+  ITaskBar = interface
+  ['{34E04843-98E7-4E24-8353-D3D9B1281E29}']
+    function Button(index: Integer): ITaskBarButton; safecall;
+    function ButtonCount: Integer; safecall;
+    procedure InitInterface(AHandle: HWND); safecall;
+    function GetAllowButtons: BOOL; safecall;
+    function GetFullScreen: BOOL; safecall;
+    function GetOverlayIcon: IString; safecall;
+    function GetProgress: Int64; safecall;
+    function GetProgressMax: Int64; safecall;
+    function GetProgressState: TProgressState; safecall;
+    procedure SetAllowButtons(Value: BOOL); safecall;
+    procedure SetMarkAsFullScreen(Value: BOOL); safecall;
+    procedure SetOverlayIcon(Value: IString); safecall;
+    procedure SetProgress(Value: Int64); safecall;
+    procedure SetProgressMax(Value: Int64); safecall;
+    procedure SetProgressState(Value: TProgressState); safecall;
+
+    property AllowButtons: BOOL read GetAllowButtons write SetAllowButtons;
+    property MarkAsFullScreen: BOOL read GetFullScreen write SetMarkAsFullScreen;
+    property OverlayIcon: IString read GetOverlayIcon write SetOverlayIcon;
+    property Progress: Int64 read GetProgress write SetProgress;
+    property ProgressMax: Int64 read GetProgressMax write SetProgressMax;
+    property ProgressState: TProgressState read GetProgressState write SetProgressState;
 
   end;
   
